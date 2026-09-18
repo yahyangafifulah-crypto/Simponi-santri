@@ -1,0 +1,2375 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Santri</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:#eef2f5;min-height:100vh;padding-bottom:90px}
+
+.login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#27ae60,#16a085);display:flex;align-items:center;justify-content:center;padding:20px;z-index:9999;transition:opacity .3s,visibility .3s}
+.login-screen.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.login-box{background:#fff;width:100%;max-width:380px;padding:30px 24px;border-radius:18px;box-shadow:0 20px 50px rgba(0,0,0,.3);text-align:center;animation:loginPop .4s}
+@keyframes loginPop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+.login-logo{font-size:56px;margin-bottom:10px;display:block}
+.login-box h1{font-size:22px;color:#2c3e50;margin-bottom:4px}
+.login-sub{font-size:13px;color:#95a5a6;margin-bottom:22px}
+.login-form{text-align:left}
+.login-form label{font-size:12.5px;color:#7f8c8d;font-weight:600;display:block;margin-bottom:5px;margin-top:10px}
+.login-form input[type=text],.login-form input[type=password]{width:100%;padding:13px 14px;border:1.5px solid #dfe4ea;border-radius:10px;font-size:15px;background:#fff;margin-bottom:4px}
+.login-form input[type=text]:focus,.login-form input[type=password]:focus{outline:none;border-color:#27ae60;background:#f0fdf7}
+.login-ingat{display:flex;align-items:center;gap:8px;margin:14px 0 16px}
+.login-ingat input{width:auto;margin:0}
+.login-ingat label{font-size:12.5px;color:#7f8c8d;margin:0;font-weight:400}
+.btn-login{width:100%;padding:14px;background:#27ae60;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;transition:background .2s}
+.btn-login:active{background:#219150;transform:scale(.98)}
+.btn-login:disabled{background:#95a5a6;cursor:not-allowed}
+.login-error{color:#e74c3c;font-size:12.5px;text-align:center;margin-top:10px;min-height:16px;font-weight:600}
+.login-footer{margin-top:20px;font-size:11px;color:#bdc3c7}
+.btn-logout{width:100%;padding:13px;background:#fff;color:#e74c3c;border:1.5px solid #fdeaea;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;margin-top:16px;transition:all .2s}
+.btn-logout:active{background:#fdeaea;transform:scale(.98)}
+
+.loading{position:fixed;inset:0;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;gap:12px}
+.loading.hidden{display:none}
+.spinner{width:44px;height:44px;border:4px solid #e8f8f0;border-top-color:#27ae60;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading p{color:#7f8c8d;font-size:13px}
+
+header{background:#27ae60;color:#fff;padding:16px;box-shadow:0 2px 6px rgba(0,0,0,.15);position:sticky;top:0;z-index:100}
+.header-inner{display:flex;align-items:center;gap:10px;max-width:700px;margin:0 auto}
+.btn-back{background:rgba(255,255,255,.2);border:none;color:#fff;font-size:20px;width:36px;height:36px;border-radius:50%;cursor:pointer;display:none;align-items:center;justify-content:center;flex-shrink:0}
+.btn-back.show{display:flex}
+header h1{font-size:18px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+main{padding:16px;max-width:700px;margin:0 auto}
+
+.welcome{background:linear-gradient(135deg,#27ae60,#16a085);color:#fff;padding:20px;border-radius:14px;margin-bottom:18px;box-shadow:0 4px 12px rgba(39,174,96,.3)}
+.welcome h2{font-size:18px;margin-bottom:4px}
+.welcome p{font-size:13px;opacity:.9}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.stat{background:rgba(255,255,255,.2);padding:10px 6px;border-radius:9px;text-align:center}
+.stat b{display:block;font-size:18px}
+.stat span{font-size:10.5px;opacity:.9}
+
+.menu-title{font-size:14px;font-weight:600;color:#7f8c8d;margin:8px 0 10px;text-transform:uppercase;letter-spacing:.5px}
+.menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.menu-card{background:#fff;padding:20px 14px;border-radius:14px;text-align:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:transform .15s;border:none;width:100%}
+.menu-card:active{transform:scale(.96)}
+.menu-card .icon{font-size:36px;margin-bottom:8px;display:block}
+.menu-card .label{font-size:14px;font-weight:600;color:#2c3e50}
+.menu-card .desc{font-size:11px;color:#95a5a6;margin-top:3px}
+
+.breadcrumb{background:#fff;padding:10px 14px;border-radius:10px;font-size:12.5px;color:#7f8c8d;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.05);overflow-x:auto;white-space:nowrap}
+.breadcrumb span{color:#27ae60;font-weight:600}
+
+.level-title{font-size:14px;font-weight:600;color:#7f8c8d;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+.btn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+.level-btn{background:#fff;border:none;padding:20px 14px;border-radius:14px;text-align:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:transform .15s;width:100%;position:relative}
+.level-btn:active{transform:scale(.96)}
+.level-btn .icon{font-size:34px;display:block;margin-bottom:6px}
+.level-btn .label{font-size:15px;font-weight:700;color:#2c3e50}
+.level-btn .desc{font-size:11.5px;color:#95a5a6;margin-top:4px}
+.level-btn .badge-count{position:absolute;top:8px;right:8px;background:#27ae60;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;min-width:24px}
+.level-btn.ibtidaiyah{border-top:4px solid #3498db}
+.level-btn.tsanawiyah{border-top:4px solid #f39c12}
+.level-btn.aliyah{border-top:4px solid #9b59b6}
+.level-btn.kelas{border-top:4px solid #27ae60}
+.level-btn.bagian{border-top:4px solid #e74c3c}
+
+.table-toolbar{display:flex;gap:8px;margin-bottom:12px}
+.table-toolbar input{flex:1;padding:10px;border:1px solid #dfe4ea;border-radius:8px;font-size:14px;background:#fff}
+.table-wrapper{overflow-x:auto;background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);-webkit-overflow-scrolling:touch}
+table.excel{width:100%;border-collapse:collapse;font-size:13px;min-width:620px}
+table.excel thead{background:#27ae60;color:#fff;position:sticky;top:0}
+table.excel th{padding:10px 8px;text-align:left;font-weight:600;font-size:12.5px;white-space:nowrap}
+table.excel td{padding:9px 8px;border-bottom:1px solid #eef2f5;color:#2c3e50;vertical-align:top}
+table.excel tr:nth-child(even) td{background:#fafbfc}
+table.excel .no{text-align:center;color:#95a5a6;width:36px;font-weight:600}
+table.excel .aksi-cell{text-align:center;white-space:nowrap}
+table.excel .aksi-cell button{padding:5px 8px;border:none;border-radius:5px;font-size:11px;cursor:pointer;margin:0 1px}
+.btn-edit-tbl{background:#3498db;color:#fff}
+.btn-hapus-tbl{background:#e74c3c;color:#fff}
+.table-empty{padding:30px;text-align:center;color:#95a5a6;font-size:14px}
+.table-info{font-size:12px;color:#7f8c8d;padding:8px 12px;background:#f8f9fa;border-bottom:1px solid #eef2f5;text-align:right}
+
+table.excel-nilai{width:100%;border-collapse:collapse;font-size:12.5px;min-width:max-content}
+table.excel-nilai thead{background:#3498db;color:#fff;position:sticky;top:0;z-index:2}
+table.excel-nilai th{padding:9px 8px;text-align:center;font-weight:600;font-size:12px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.2)}
+table.excel-nilai th.nama-col{text-align:left;background:#2980b9;position:sticky;left:0;z-index:3;min-width:130px}
+table.excel-nilai th.no-col{background:#2980b9;width:36px;position:sticky;left:0;z-index:3}
+table.excel-nilai td{padding:8px;border-bottom:1px solid #eef2f5;border-right:1px solid #f5f7fa;text-align:center;color:#2c3e50;white-space:nowrap}
+table.excel-nilai td.nama-col{text-align:left;font-weight:600;background:#fff;position:sticky;left:0;z-index:1;box-shadow:2px 0 4px rgba(0,0,0,.04)}
+table.excel-nilai td.no-col{background:#fafbfc;color:#95a5a6;font-weight:600;position:sticky;left:0;z-index:1}
+table.excel-nilai tr:nth-child(even) td{background:#fafbfc}
+table.excel-nilai tr:nth-child(even) td.nama-col{background:#fafbfc}
+.nilai-sel{width:56px;padding:5px 3px;border:1px solid #dfe4ea;border-radius:6px;font-size:13px;text-align:center;background:#fff;color:#2c3e50;font-weight:600}
+.nilai-sel:focus{outline:none;border-color:#3498db;background:#eaf4fd}
+.nilai-sel.baik{border-color:#27ae60;color:#27ae60;background:#e8f8f0}
+.nilai-sel.cukup{border-color:#f39c12;color:#f39c12;background:#fef5e7}
+.nilai-sel.kurang{border-color:#e74c3c;color:#e74c3c;background:#fdeaea}
+.rata-rata{font-weight:700;font-size:13.5px;color:#2c3e50}
+.rata-rata.baik{color:#27ae60}
+.rata-rata.cukup{color:#f39c12}
+.rata-rata.kurang{color:#e74c3c}
+.aksi-nilai{padding:5px 8px;border:none;border-radius:5px;font-size:11px;cursor:pointer;background:#e74c3c;color:#fff}
+
+.absensi-toolbar{background:#fff;padding:12px;border-radius:11px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.absensi-toolbar label{font-size:12.5px;color:#7f8c8d;display:block;margin-bottom:5px;font-weight:600}
+.absensi-toolbar input[type=date]{width:100%;padding:10px;border:1px solid #dfe4ea;border-radius:8px;font-size:14px;background:#fff}
+.rekap-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+.rekap-item{background:#fff;padding:10px 6px;border-radius:10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.rekap-item b{display:block;font-size:18px;font-weight:700}
+.rekap-item span{font-size:10.5px;color:#7f8c8d}
+.rekap-h b{color:#27ae60}
+.rekap-s b{color:#f39c12}
+.rekap-i b{color:#3498db}
+.rekap-a b{color:#e74c3c}
+table.tabel-absensi{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+table.tabel-absensi thead{background:#9b59b6;color:#fff;position:sticky;top:0}
+table.tabel-absensi th{padding:10px 8px;text-align:left;font-weight:600;font-size:12.5px;white-space:nowrap}
+table.tabel-absensi td{padding:10px 8px;border-bottom:1px solid #eef2f5;color:#2c3e50;vertical-align:middle}
+table.tabel-absensi tr:nth-child(even) td{background:#fafbfc}
+table.tabel-absensi .no{text-align:center;color:#95a5a6;width:36px;font-weight:600}
+.btn-status{display:inline-flex;gap:4px}
+.btn-status button{width:32px;height:32px;border-radius:8px;border:1.5px solid #dfe4ea;background:#fff;font-weight:700;font-size:12px;cursor:pointer;color:#95a5a6;transition:all .15s;padding:0}
+.btn-status button:active{transform:scale(.92)}
+.btn-status button.active.H{background:#27ae60;border-color:#27ae60;color:#fff}
+.btn-status button.active.S{background:#f39c12;border-color:#f39c12;color:#fff}
+.btn-status button.active.I{background:#3498db;border-color:#3498db;color:#fff}
+.btn-status button.active.A{background:#e74c3c;border-color:#e74c3c;color:#fff}
+.absensi-ket{width:100%;padding:7px 9px;border:1px solid #dfe4ea;border-radius:7px;font-size:12.5px;background:#fff}
+.absensi-ket:focus{outline:none;border-color:#9b59b6}
+.absensi-actions{display:flex;gap:8px;margin-top:12px}
+.absensi-actions button{flex:1;padding:12px;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer}
+.btn-semua-hadir{background:#27ae60;color:#fff}
+.btn-reset-absen{background:#f0f2f5;color:#7f8c8d}
+
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;justify-content:center}
+.modal.show{display:flex}
+.modal-content{background:#fff;width:100%;max-width:600px;border-radius:16px 16px 0 0;padding:20px;max-height:90vh;overflow-y:auto;animation:slideUp .25s}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #eef2f5}
+.modal-header h3{font-size:16px;color:#2c3e50}
+.modal-close{background:#f0f2f5;border:none;font-size:18px;width:32px;height:32px;border-radius:50%;cursor:pointer;color:#7f8c8d}
+.modal-content input,.modal-content select{width:100%;padding:12px;margin-bottom:11px;border:1px solid #dfe4ea;border-radius:9px;font-size:15px;background:#fff}
+.modal-content input:focus,.modal-content select:focus{outline:none;border-color:#27ae60}
+.modal-content button.primary{width:100%;padding:13px;background:#27ae60;color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px}
+.modal-content button.secondary{width:100%;padding:13px;background:#f0f2f5;color:#7f8c8d;border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px}
+
+.tabs{display:flex;background:#fff;border-radius:10px;padding:4px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow-x:auto}
+.tab{flex:1;padding:10px 6px;text-align:center;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer;color:#7f8c8d;border:none;background:none;transition:all .2s;white-space:nowrap}
+.tab.active{background:#27ae60;color:#fff}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+.item-list{list-style:none}
+.item-list li{background:#fff;padding:12px 14px;margin-bottom:8px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.item-nama{font-size:14px;color:#2c3e50;font-weight:500;word-wrap:break-word;flex:1}
+.item-aksi{display:flex;gap:6px}
+.item-aksi button{padding:6px 10px;border:none;border-radius:6px;font-size:12px;cursor:pointer}
+.btn-mini-edit{background:#3498db;color:#fff}
+.btn-mini-hapus{background:#e74c3c;color:#fff}
+
+.form-box{background:#fff;padding:14px;border-radius:12px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.form-box input,.form-box select{width:100%;padding:11px;margin-bottom:9px;border:1px solid #dfe4ea;border-radius:8px;font-size:14px;background:#fff}
+.form-box button{width:100%;padding:12px;background:#27ae60;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px}
+.form-box button:active{background:#219150}
+.btn-batal{background:#95a5a6!important}
+
+.count-info{font-size:12px;color:#95a5a6;text-align:right;margin-bottom:8px}
+
+.hint{background:#fff8e1;border-left:4px solid #f39c12;padding:12px;border-radius:8px;font-size:13px;color:#7f6000;margin-top:16px}
+
+.page{display:none;animation:fadeIn .25s}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(100px);background:#2c3e50;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.3);transition:transform .3s;z-index:9999;opacity:.95}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+.fab{position:fixed;bottom:20px;right:20px;background:#27ae60;color:#fff;border:none;width:56px;height:56px;border-radius:50%;font-size:28px;cursor:pointer;box-shadow:0 4px 14px rgba(39,174,96,.5);z-index:150;display:none}
+.fab.show{display:flex;align-items:center;justify-content:center}
+
+.sync-badge{position:fixed;top:70px;right:12px;background:#27ae60;color:#fff;padding:4px 10px;border-radius:20px;font-size:10.5px;font-weight:600;z-index:99;opacity:0;transition:opacity .3s;pointer-events:none}
+.sync-badge.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="loading hidden" id="loading">
+  <div class="spinner"></div>
+  <p>Memuat data...</p>
+</div>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <span class="login-logo">📚</span>
+    <h1>App Santri</h1>
+    <p class="login-sub">Silakan login untuk melanjutkan</p>
+
+    <div class="login-form">
+      <label>👤 Username</label>
+      <input type="text" id="loginUser" placeholder="Masukkan username" autocomplete="off">
+
+      <label>🔒 Password</label>
+      <input type="password" id="loginPass" placeholder="Masukkan password" autocomplete="off">
+
+      <div class="login-ingat">
+        <input type="checkbox" id="loginIngat" checked>
+        <label for="loginIngat">Ingat saya di perangkat ini</label>
+      </div>
+
+      <button class="btn-login" id="btnLogin" onclick="prosesLogin()">Masuk</button>
+      <p class="login-error" id="loginError"></p>
+    </div>
+
+    <p class="login-footer">© App Santri • Online Mode 🌐</p>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <button class="btn-back" id="btnBack" onclick="goBack()">←</button>
+    <h1 id="pageTitle">🏠 App Santri</h1>
+  </div>
+</header>
+
+<main>
+
+  <div class="page active" id="page-home">
+    <div class="welcome">
+      <h2>Assalamu'alaikum 👋</h2>
+      <p id="welcomeInfo">Selamat datang di aplikasi manajemen santri</p>
+      <div class="stats">
+        <div class="stat"><b id="statSantri">0</b><span>Santri</span></div>
+        <div class="stat"><b id="statNilai">0</b><span>Nilai</span></div>
+        <div class="stat"><b id="statJenjang">0</b><span>Jenjang</span></div>
+      </div>
+    </div>
+
+    <div class="menu-title">Menu Utama</div>
+    <div class="menu-grid" id="menuGrid"></div>
+
+    <div class="hint">
+      🌐 <b>Mode Online:</b> Data otomatis sinkron antar HP/komputer.
+    </div>
+
+    <button class="btn-logout" onclick="logout()">🚪 Keluar / Logout</button>
+  </div>
+
+  <div class="page" id="page-santri">
+    <div class="breadcrumb" id="breadcrumb">🏠 <span>Pilih Jenjang</span></div>
+    <div id="santriContent"></div>
+  </div>
+
+  <div class="page" id="page-nilai">
+    <div class="breadcrumb" id="breadcrumbNilai">🏠 <span>Pilih Jenjang</span></div>
+    <div id="nilaiContent"></div>
+  </div>
+
+  <div class="page" id="page-pengajar">
+    <div class="breadcrumb" id="breadcrumbPengajar">🏠 <span>Pilih Kategori</span></div>
+    <div id="pengajarContent"></div>
+  </div>
+
+  <div class="page" id="page-absensi">
+    <div class="breadcrumb" id="breadcrumbAbsensi">🏠 <span>Pilih Jenjang</span></div>
+    <div id="absensiContent"></div>
+  </div>
+
+  <div class="page" id="page-pengaturan">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('jenjang', this)">🎓 Jenjang</button>
+      <button class="tab" onclick="switchTab('kelas', this)">📚 Kelas</button>
+      <button class="tab" onclick="switchTab('bagian', this)">🏷️ Bagian</button>
+      <button class="tab" onclick="switchTab('mapel', this)">📖 Mapel</button>
+      <button class="tab" onclick="switchTab('login', this)">👥 User</button>
+    </div>
+
+    <div class="tab-content active" id="tab-jenjang">
+      <section class="form-box">
+        <input type="text" id="inputJenjang" placeholder="Nama Jenjang (contoh: Ibtidaiyah)">
+        <button onclick="simpanItem('jenjang')">Tambah Jenjang</button>
+        <button class="btn-batal" onclick="batalItem('jenjang')" id="btnBatalJenjang" style="display:none;">Batal</button>
+      </section>
+      <p class="count-info"><span id="countJenjang">0</span> jenjang terdaftar</p>
+      <ul class="item-list" id="listJenjang"></ul>
+    </div>
+
+    <div class="tab-content" id="tab-kelas">
+      <section class="form-box">
+        <select id="inputKelasJenjang" style="margin-bottom:9px"><option value="">-- Pilih Jenjang --</option></select>
+        <input type="text" id="inputKelas" placeholder="Nama Kelas (contoh: 7)">
+        <button onclick="simpanItem('kelas')">Tambah Kelas</button>
+        <button class="btn-batal" onclick="batalItem('kelas')" id="btnBatalKelas" style="display:none;">Batal</button>
+      </section>
+      <p class="count-info"><span id="countKelas">0</span> kelas terdaftar</p>
+      <div id="listKelasGroup"></div>
+    </div>
+
+    <div class="tab-content" id="tab-bagian">
+      <section class="form-box">
+        <input type="text" id="inputBagian" placeholder="Nama Bagian (contoh: A, B, Ula)">
+        <button onclick="simpanItem('bagian')">Tambah Bagian</button>
+        <button class="btn-batal" onclick="batalItem('bagian')" id="btnBatalBagian" style="display:none;">Batal</button>
+      </section>
+      <p class="count-info"><span id="countBagian">0</span> bagian terdaftar</p>
+      <ul class="item-list" id="listBagian"></ul>
+    </div>
+
+    <div class="tab-content" id="tab-mapel">
+      <div class="hint" style="margin-bottom:12px;margin-top:0;">
+        📌 Mapel diatur <b>per tingkat kelas</b>.
+      </div>
+      <p class="count-info"><span id="countMapelTotal">0</span> mapel total</p>
+      <div id="listMapelPerKelas"></div>
+    </div>
+
+    <div class="tab-content" id="tab-login">
+      <div class="hint" style="margin-top:0;margin-bottom:12px;">
+        👥 Kelola <b>user</b> aplikasi.
+      </div>
+
+      <section class="form-box" id="formUserBox">
+        <h4 id="titleFormUser" style="font-size:14px;color:#27ae60;margin-bottom:10px;">➕ Tambah User Baru</h4>
+
+        <label style="font-size:12.5px;color:#7f8c8d;font-weight:600;display:block;margin-bottom:5px;">👤 Username</label>
+        <input type="text" id="uUsername" placeholder="Username" autocomplete="off">
+
+        <label style="font-size:12.5px;color:#7f8c8d;font-weight:600;display:block;margin-bottom:5px;">🔒 Password</label>
+        <input type="password" id="uPassword" placeholder="Minimal 4 karakter" autocomplete="off">
+
+        <label style="font-size:12.5px;color:#7f8c8d;font-weight:600;display:block;margin-bottom:5px;">👑 Role</label>
+        <select id="uRole">
+          <option value="Admin">👑 Admin - Akses Penuh</option>
+          <option value="Mustahiq">🎓 Mustahiq - Absen & Nilai</option>
+          <option value="Munawib">📖 Munawib - Absen & Nilai</option>
+          <option value="Wali">👁️ Wali Santri - Hanya Lihat</option>
+        </select>
+
+        <label style="font-size:12.5px;color:#7f8c8d;font-weight:600;display:block;margin-bottom:5px;">⚡ Status</label>
+        <select id="uAktif">
+          <option value="true">Aktif</option>
+          <option value="false">Nonaktif</option>
+        </select>
+
+        <button onclick="simpanUser()" id="btnSimpanUser">💾 Simpan User</button>
+        <button class="btn-batal" onclick="batalEditUser()" id="btnBatalUser" style="display:none;">Batal Edit</button>
+      </section>
+
+      <p class="count-info"><span id="countUser">0</span> user terdaftar</p>
+      <ul class="item-list" id="listUser"></ul>
+    </div>
+  </div>
+
+</main>
+
+<div class="modal" id="modalSantri">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modalTitle">Tambah Santri</h3>
+      <button class="modal-close" onclick="tutupModal()">✕</button>
+    </div>
+    <input type="text" id="mNama" placeholder="Nama Santri">
+    <input type="text" id="mKamar" placeholder="Kamar (contoh: U29)">
+    <input type="text" id="mAsal" placeholder="Asal Daerah">
+    <input type="text" id="mKelas" readonly style="background:#f0f2f5;color:#7f8c8d">
+    <input type="text" id="mBagian" readonly style="background:#f0f2f5;color:#7f8c8d">
+    <button class="primary" onclick="simpanSantriModal()">Simpan</button>
+    <button class="secondary" onclick="tutupModal()">Batal</button>
+  </div>
+</div>
+
+<div class="modal" id="modalNilai">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modalTitleNilai">Input Nilai</h3>
+      <button class="modal-close" onclick="tutupModalNilai()">✕</button>
+    </div>
+    <select id="mNamaSantri">
+      <option value="">-- Pilih Santri --</option>
+    </select>
+    <div id="mMapelList"></div>
+    <button class="primary" onclick="simpanNilaiMassal()">Simpan Semua Nilai</button>
+    <button class="secondary" onclick="tutupModalNilai()">Batal</button>
+  </div>
+</div>
+
+<div class="modal" id="modalPengajar">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modalTitlePengajar">Tambah Pengajar</h3>
+      <button class="modal-close" onclick="tutupModalPengajar()">✕</button>
+    </div>
+    <input type="text" id="pNama" placeholder="Nama Pengajar">
+    <input type="text" id="pNip" placeholder="NIP / ID (opsional)">
+    <input type="text" id="pAsal" placeholder="Asal Daerah">
+    <input type="text" id="pTelepon" placeholder="No. HP / WhatsApp">
+    <select id="pMapel">
+      <option value="">-- Pilih Mapel Utama (opsional) --</option>
+    </select>
+    <input type="text" id="pKategori" readonly style="background:#f0f2f5;color:#7f8c8d">
+    <button class="primary" onclick="simpanPengajar()">Simpan</button>
+    <button class="secondary" onclick="tutupModalPengajar()">Batal</button>
+  </div>
+</div>
+
+<button class="fab" id="fabAdd" onclick="bukaModalTambah()">+</button>
+
+<div class="toast" id="toast"></div>
+<div class="sync-badge" id="syncBadge">🔄 Sync...</div>
+
+<script>
+/* ============================================================
+   KONEKSI SUPABASE
+============================================================ */
+const SUPABASE_URL = 'https://nrvuajywtrbiagxrsnce.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ydnVhanl3dHJiaWFneHJzbmNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2NTM4MDgsImV4cCI6MjEwNTIyOTgwOH0.yM2znd9eSfMbRrp-9-MssBmt0VSHLjZg2oIpbwlWWZ4';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ============================================================
+   CACHE DATA LOKAL (untuk render cepat)
+============================================================ */
+let cache = {
+  santri: [],
+  nilai: [],
+  absensi: [],
+  pengajar: [],
+  pengaturan: {},
+  users: []
+};
+
+/* ============================================================
+   UTILITY
+============================================================ */
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function showSync(){
+  const b = document.getElementById('syncBadge');
+  b.classList.add('show');
+  clearTimeout(b._timer);
+  b._timer = setTimeout(() => b.classList.remove('show'), 1200);
+}
+
+function showLoading(show){
+  document.getElementById('loading').classList.toggle('hidden', !show);
+}
+
+function esc(s){
+  if(s === null || s === undefined) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ============================================================
+   LOAD DATA DARI SUPABASE
+============================================================ */
+async function loadAllData(){
+  showLoading(true);
+  try {
+    const [santri, nilai, absensi, pengajar, pengaturan, users] = await Promise.all([
+      sb.from('santri').select('*').order('id', {ascending:true}),
+      sb.from('nilai').select('*').order('id', {ascending:true}),
+      sb.from('absensi').select('*').order('id', {ascending:true}),
+      sb.from('pengajar').select('*').order('id', {ascending:true}),
+      sb.from('pengaturan').select('*'),
+      sb.from('users').select('*').order('id', {ascending:true})
+    ]);
+
+    cache.santri = santri.data || [];
+    cache.nilai = nilai.data || [];
+    cache.absensi = absensi.data || [];
+    cache.pengajar = pengajar.data || [];
+    cache.users = users.data || [];
+
+    cache.pengaturan = {};
+    (pengaturan.data || []).forEach(row => {
+      cache.pengaturan[row.key] = row.value;
+    });
+
+    // Default pengaturan jika kosong
+    if(!cache.pengaturan.jenjang){
+      cache.pengaturan.jenjang = ['Ibtidaiyah','Tsanawiyah','Aliyah'];
+    }
+    if(!cache.pengaturan.kelas){
+      cache.pengaturan.kelas = {
+        'Ibtidaiyah': ['1','2','3','4','5','6'],
+        'Tsanawiyah': ['7','8','9'],
+        'Aliyah': ['10','11','12']
+      };
+    }
+    if(!cache.pengaturan.bagian){
+      cache.pengaturan.bagian = ['A','B','C','D'];
+    }
+    if(!cache.pengaturan.mapel){
+      cache.pengaturan.mapel = {};
+    }
+  } catch(e){
+    console.error('Load error:', e);
+    alert('❌ Gagal memuat data: ' + e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+/* ============================================================
+   AKSES DATA (dari cache)
+============================================================ */
+function getSantri(){ return cache.santri; }
+function getNilai(){ return cache.nilai; }
+function getPengajar(){ return cache.pengajar; }
+function getAbsensi(){ return cache.absensi; }
+function getUsers(){ return cache.users; }
+
+function getJenjang(){ return cache.pengaturan.jenjang || []; }
+function getKelasAll(){ return cache.pengaturan.kelas || {}; }
+function getBagian(){ return cache.pengaturan.bagian || []; }
+function getMapelAll(){ return cache.pengaturan.mapel || {}; }
+
+function getKelasByJenjang(jenjang){
+  return getKelasAll()[jenjang] || [];
+}
+
+function keyMapel(jenjang, kelas){ return jenjang + '-' + kelas; }
+function getMapelByKelas(jenjang, kelas){
+  return getMapelAll()[keyMapel(jenjang, kelas)] || [];
+}
+
+/* ============================================================
+   SIMPAN PENGATURAN KE SUPABASE
+============================================================ */
+async function simpanPengaturan(key, value){
+  cache.pengaturan[key] = value;
+  const { error } = await sb.from('pengaturan').upsert(
+    { key: key, value: value, updated_at: new Date().toISOString() },
+    { onConflict: 'key' }
+  );
+  if(error){ console.error('Simpan pengaturan error:', error); alert('❌ Gagal simpan: ' + error.message); }
+}
+
+/* ============================================================
+   USER & LOGIN
+============================================================ */
+const KEY_LOGIN = 'login_session_sb';
+
+function getCurrentUser(){
+  try{ return JSON.parse(localStorage.getItem('user_current_sb')) || null; }catch(e){ return null; }
+}
+function setCurrentUser(u){ localStorage.setItem('user_current_sb', JSON.stringify(u)); }
+function clearCurrentUser(){ localStorage.removeItem('user_current_sb'); }
+
+function getRole(){
+  const u = getCurrentUser();
+  return u ? (u.role || 'Wali') : 'Wali';
+}
+function isAdmin(){    return getRole() === 'Admin'; }
+function isPengajar(){ return ['Mustahiq','Munawib'].includes(getRole()); }
+function isWali(){     return getRole() === 'Wali'; }
+
+function bisaKelolaSantri(){     return isAdmin(); }
+function bisaKelolaPengaturan(){ return isAdmin(); }
+function bisaKelolaPengajar(){   return isAdmin(); }
+function bisaKelolaUser(){       return isAdmin(); }
+function bisaInputNilai(){       return isAdmin() || isPengajar(); }
+function bisaIsiAbsensi(){       return isAdmin() || isPengajar(); }
+function bisaHapusNilai(){       return isAdmin(); }
+
+async function prosesLogin(){
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const ingat = document.getElementById('loginIngat').checked;
+  const err = document.getElementById('loginError');
+  const btn = document.getElementById('btnLogin');
+
+  if(!user || !pass){
+    err.textContent = '⚠️ Username dan password wajib diisi!';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Memeriksa...';
+
+  try {
+    const { data, error } = await sb
+      .from('users')
+      .select('*')
+      .eq('username', user)
+      .eq('password', pass)
+      .maybeSingle();
+
+    if(error){ throw error; }
+
+    if(!data){
+      err.textContent = '❌ Username atau password salah!';
+      document.getElementById('loginPass').value = '';
+      return;
+    }
+    if(data.aktif === false){
+      err.textContent = '🚫 Akun ini dinonaktifkan!';
+      return;
+    }
+
+    err.textContent = '';
+    setCurrentUser({ id: data.id, username: data.username, role: data.role });
+
+    if(ingat){
+      localStorage.setItem(KEY_LOGIN, 'aktif');
+    } else {
+      sessionStorage.setItem(KEY_LOGIN, 'aktif');
+    }
+
+    document.getElementById('loginScreen').classList.add('hidden');
+    await loadAllData();
+    renderMenuDashboard();
+    refreshStats();
+    toast('Selamat datang, ' + data.username + ' 👋');
+
+  } catch(e){
+    console.error(e);
+    err.textContent = '❌ Error: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Masuk';
+  }
+}
+
+function logout(){
+  if(!confirm('Yakin ingin keluar dari aplikasi?')) return;
+  localStorage.removeItem(KEY_LOGIN);
+  sessionStorage.removeItem(KEY_LOGIN);
+  clearCurrentUser();
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').textContent = '';
+  goHome();
+}
+
+/* ============================================================
+   NAVIGASI
+============================================================ */
+let nav        = { jenjang:null, kelas:null, bagian:null };
+let navNilai   = { jenjang:null, kelas:null, bagian:null };
+let navPengajar = { kategori:null };
+let navAbsensi = { jenjang:null, kelas:null, bagian:null };
+let tanggalAbsensi = new Date().toISOString().slice(0,10);
+
+function openPage(name){
+  if(name === 'pengaturan' && !isAdmin()){ alert('🚫 Akses ditolak!'); return; }
+  if(name === 'pengajar' && !isAdmin()){ alert('🚫 Akses ditolak!'); return; }
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+
+  const titles = {
+    home: '🏠 App Santri', santri: '👥 Data Santri', nilai: '📊 Nilai Santri',
+    pengajar: '👨‍🏫 Data Pengajar', absensi: '✅ Absensi Santri', pengaturan: '⚙️ Pengaturan'
+  };
+  document.getElementById('pageTitle').textContent = titles[name] || 'App Santri';
+  document.getElementById('btnBack').classList.toggle('show', name !== 'home');
+  document.getElementById('fabAdd').classList.remove('show');
+
+  if(name === 'santri'){ nav = {jenjang:null,kelas:null,bagian:null}; renderSantriPage(); }
+  if(name === 'nilai'){ navNilai = {jenjang:null,kelas:null,bagian:null}; renderNilaiPage(); }
+  if(name === 'pengajar'){ navPengajar = {kategori:null}; renderPengajarPage(); }
+  if(name === 'absensi'){ navAbsensi = {jenjang:null,kelas:null,bagian:null}; renderAbsensiPage(); }
+  if(name === 'pengaturan'){ renderPengaturan(); }
+  if(name === 'home'){ renderMenuDashboard(); }
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function goHome(){ openPage('home'); refreshStats(); }
+
+function goBack(){
+  if(document.getElementById('page-santri').classList.contains('active')){
+    if(nav.bagian){ nav.bagian = null; renderSantriPage(); return; }
+    if(nav.kelas){ nav.kelas = null; renderSantriPage(); return; }
+    if(nav.jenjang){ nav.jenjang = null; renderSantriPage(); return; }
+  }
+  if(document.getElementById('page-nilai').classList.contains('active')){
+    if(navNilai.bagian){ navNilai.bagian = null; renderNilaiPage(); return; }
+    if(navNilai.kelas){ navNilai.kelas = null; renderNilaiPage(); return; }
+    if(navNilai.jenjang){ navNilai.jenjang = null; renderNilaiPage(); return; }
+  }
+  if(document.getElementById('page-pengajar').classList.contains('active')){
+    if(navPengajar.kategori){ navPengajar.kategori = null; renderPengajarPage(); return; }
+  }
+  if(document.getElementById('page-absensi').classList.contains('active')){
+    if(navAbsensi.bagian){ navAbsensi.bagian = null; renderAbsensiPage(); return; }
+    if(navAbsensi.kelas){ navAbsensi.kelas = null; renderAbsensiPage(); return; }
+    if(navAbsensi.jenjang){ navAbsensi.jenjang = null; renderAbsensiPage(); return; }
+  }
+  goHome();
+}
+
+function refreshStats(){
+  document.getElementById('statSantri').textContent = getSantri().length;
+  document.getElementById('statNilai').textContent  = getNilai().length;
+  document.getElementById('statJenjang').textContent = getJenjang().length;
+}
+
+/* ============================================================
+   MENU DASHBOARD
+============================================================ */
+function renderMenuDashboard(){
+  const grid = document.getElementById('menuGrid');
+  if(!grid) return;
+
+  const u = getCurrentUser();
+  const info = document.getElementById('welcomeInfo');
+  if(u && info){
+    const ikon = u.role === 'Admin' ? '👑' : u.role === 'Mustahiq' ? '🎓' : u.role === 'Munawib' ? '📖' : '👁️';
+    info.textContent = `${ikon} ${u.username} • ${u.role} • 🌐 Online`;
+  }
+
+  const menus = [
+    { page:'santri', icon:'👥', label:'Data Santri', desc: isAdmin() ? 'Kelola data santri' : 'Lihat data santri' },
+    { page:'nilai', icon:'📊', label:'Nilai', desc: bisaInputNilai() ? 'Input & lihat nilai' : 'Lihat nilai' },
+    { page:'absensi', icon:'✅', label:'Absensi', desc: bisaIsiAbsensi() ? 'Isi kehadiran' : 'Lihat kehadiran' }
+  ];
+
+  if(isAdmin()){
+    menus.push({ page:'pengajar', icon:'👨‍🏫', label:'Pengajar', desc:'Mustahiq & Munawib' });
+    menus.push({ page:'pengaturan', icon:'⚙️', label:'Pengaturan', desc:'Jenjang, kelas, bagian, user' });
+  }
+
+  grid.innerHTML = menus.map(m => `
+    <button class="menu-card" onclick="openPage('${m.page}')">
+      <span class="icon">${m.icon}</span>
+      <div class="label">${m.label}</div>
+      <div class="desc">${m.desc}</div>
+    </button>
+  `).join('');
+}
+
+/* ============================================================
+   HALAMAN DATA SANTRI
+============================================================ */
+function renderSantriPage(){
+  const content = document.getElementById('santriContent');
+  const bc = document.getElementById('breadcrumb');
+  const fab = document.getElementById('fabAdd');
+  const allSantri = getSantri();
+
+  if(!nav.jenjang){
+    bc.innerHTML = '🏠 <span>Pilih Jenjang</span>';
+    fab.classList.remove('show');
+    const jenjangList = getJenjang();
+    const kelasAll = getKelasAll();
+
+    if(!jenjangList.length){
+      content.innerHTML = '<div class="table-empty">Belum ada jenjang.</div>';
+      return;
+    }
+
+    let html = '<div class="level-title">🎓 Pilih Jenjang</div><div class="btn-grid">';
+    jenjangList.forEach(j => {
+      const kelasArr = kelasAll[j] || [];
+      const totalSantri = allSantri.filter(s => s.jenjang === j).length;
+      const cls = j.toLowerCase() === 'ibtidaiyah' ? 'ibtidaiyah' :
+                  j.toLowerCase() === 'tsanawiyah' ? 'tsanawiyah' :
+                  j.toLowerCase() === 'aliyah' ? 'aliyah' : '';
+      html += `
+        <button class="level-btn ${cls}" onclick="pilihJenjang('${esc(j)}')">
+          <span class="badge-count">${totalSantri}</span>
+          <span class="icon">🎓</span>
+          <div class="label">${esc(j)}</div>
+          <div class="desc">${kelasArr.length} kelas</div>
+        </button>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  if(!nav.kelas){
+    bc.innerHTML = `🏠 <span>${esc(nav.jenjang)}</span> › Pilih Kelas`;
+    fab.classList.remove('show');
+    const kelasArr = getKelasByJenjang(nav.jenjang);
+
+    if(!kelasArr.length){
+      content.innerHTML = `<div class="table-empty">Belum ada kelas di ${esc(nav.jenjang)}.</div>`;
+      return;
+    }
+
+    let html = `<div class="level-title">📚 Kelas di ${esc(nav.jenjang)}</div><div class="btn-grid">`;
+    kelasArr.forEach(k => {
+      const totalSantri = allSantri.filter(s => s.jenjang === nav.jenjang && s.kelas === k).length;
+      html += `
+        <button class="level-btn kelas" onclick="pilihKelas('${esc(k)}')">
+          <span class="badge-count">${totalSantri}</span>
+          <span class="icon">📚</span>
+          <div class="label">Kelas ${esc(k)}</div>
+          <div class="desc">${totalSantri} santri</div>
+        </button>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  if(!nav.bagian){
+    bc.innerHTML = `🏠 <span>${esc(nav.jenjang)}</span> › <span>Kelas ${esc(nav.kelas)}</span> › Pilih Bagian`;
+    fab.classList.remove('show');
+    const bagianArr = getBagian();
+
+    if(!bagianArr.length){
+      content.innerHTML = '<div class="table-empty">Belum ada bagian.</div>';
+      return;
+    }
+
+    let html = `<div class="level-title">🏷️ Bagian di Kelas ${esc(nav.kelas)}</div><div class="btn-grid">`;
+    bagianArr.forEach(b => {
+      const totalSantri = allSantri.filter(s =>
+        s.jenjang === nav.jenjang && s.kelas === nav.kelas && s.bagian === b
+      ).length;
+      html += `
+        <button class="level-btn bagian" onclick="pilihBagian('${esc(b)}')">
+          <span class="badge-count">${totalSantri}</span>
+          <span class="icon">🏷️</span>
+          <div class="label">Bagian ${esc(b)}</div>
+          <div class="desc">${totalSantri} santri</div>
+        </button>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  bc.innerHTML = `🏠 <span>${esc(nav.jenjang)}</span> › <span>Kelas ${esc(nav.kelas)}</span> › <span>Bagian ${esc(nav.bagian)}</span>`;
+  if(bisaKelolaSantri()){ fab.classList.add('show'); } else { fab.classList.remove('show'); }
+
+  const santriFiltered = allSantri.filter(s =>
+    s.jenjang === nav.jenjang && s.kelas === nav.kelas && s.bagian === nav.bagian
+  );
+
+  let html = `
+    <div class="table-toolbar">
+      <input type="text" id="cariTabelSantri" placeholder="🔍 Cari nama / kamar / asal..." onkeyup="filterTabelSantri()">
+    </div>
+    <div class="table-wrapper">
+      <div class="table-info">📋 ${santriFiltered.length} santri</div>
+      <table class="excel" id="tabelSantri">
+        <thead>
+          <tr>
+            <th class="no">No</th>
+            <th>Nama Santri</th>
+            <th>Kamar</th>
+            <th>Asal Daerah</th>
+            <th style="text-align:center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+  if(!santriFiltered.length){
+    html += `<tr><td colspan="5" class="table-empty">Belum ada santri.</td></tr>`;
+  } else {
+    santriFiltered.forEach((s, i) => {
+      const aksiHtml = bisaKelolaSantri()
+        ? `<td class="aksi-cell">
+             <button class="btn-edit-tbl"  onclick="editSantri(${s.id})">✏️</button>
+             <button class="btn-hapus-tbl" onclick="hapusSantri(${s.id})">🗑️</button>
+           </td>`
+        : `<td class="aksi-cell"><span style="color:#95a5a6;font-size:11px;">—</span></td>`;
+      html += `
+        <tr>
+          <td class="no">${i+1}</td>
+          <td><b>${esc(s.nama)}</b></td>
+          <td>${esc(s.kamar) || '-'}</td>
+          <td>${esc(s.asal) || '-'}</td>
+          ${aksiHtml}
+        </tr>`;
+    });
+  }
+  html += `</tbody></table></div>`;
+  content.innerHTML = html;
+}
+
+function pilihJenjang(j){ nav.jenjang = j; nav.kelas = null; nav.bagian = null; renderSantriPage(); window.scrollTo({top:0}); }
+function pilihKelas(k){ nav.kelas = k; nav.bagian = null; renderSantriPage(); window.scrollTo({top:0}); }
+function pilihBagian(b){ nav.bagian = b; renderSantriPage(); window.scrollTo({top:0}); }
+
+function filterTabelSantri(){
+  const q = document.getElementById('cariTabelSantri').value.toUpperCase();
+  document.querySelectorAll('#tabelSantri tbody tr').forEach(tr => {
+    if(tr.querySelector('.table-empty')) return;
+    tr.style.display = tr.textContent.toUpperCase().includes(q) ? '' : 'none';
+  });
+}
+
+/* ============================================================
+   MODAL SANTRI
+============================================================ */
+let editSantriId = null;
+
+function bukaModalTambah(){
+  if(document.getElementById('page-nilai').classList.contains('active')){ bukaModalNilai(); return; }
+  if(document.getElementById('page-pengajar').classList.contains('active')){ bukaModalPengajar(); return; }
+  if(!bisaKelolaSantri()){ alert('🚫 Akses ditolak!'); return; }
+  editSantriId = null;
+  document.getElementById('modalTitle').textContent = 'Tambah Santri';
+  ['mNama','mKamar','mAsal'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('mKelas').value = 'Kelas ' + nav.kelas;
+  document.getElementById('mBagian').value = 'Bagian ' + nav.bagian;
+  document.getElementById('modalSantri').classList.add('show');
+}
+
+function editSantri(id){
+  if(!bisaKelolaSantri()){ alert('🚫 Akses ditolak!'); return; }
+  const s = getSantri().find(x => x.id === id);
+  if(!s) return;
+  editSantriId = id;
+  document.getElementById('modalTitle').textContent = 'Edit Santri';
+  document.getElementById('mNama').value = s.nama;
+  document.getElementById('mKamar').value = s.kamar || '';
+  document.getElementById('mAsal').value = s.asal || '';
+  document.getElementById('mKelas').value = 'Kelas ' + s.kelas + ' (' + s.jenjang + ')';
+  document.getElementById('mBagian').value = 'Bagian ' + s.bagian;
+  document.getElementById('modalSantri').classList.add('show');
+}
+
+function tutupModal(){ document.getElementById('modalSantri').classList.remove('show'); }
+
+async function simpanSantriModal(){
+  if(!bisaKelolaSantri()){ alert('🚫 Akses ditolak!'); return; }
+  const nama  = document.getElementById('mNama').value.trim();
+  const kamar = document.getElementById('mKamar').value.trim();
+  const asal  = document.getElementById('mAsal').value.trim();
+
+  if(!nama){ alert('Nama santri tidak boleh kosong!'); return; }
+
+  showLoading(true);
+  try {
+    if(editSantriId){
+      const { error } = await sb.from('santri').update({ nama, kamar, asal }).eq('id', editSantriId);
+      if(error) throw error;
+      toast('Data santri diperbarui ✅');
+    } else {
+      const { error } = await sb.from('santri').insert({
+        nama, kamar, asal,
+        jenjang: nav.jenjang, kelas: nav.kelas, bagian: nav.bagian
+      });
+      if(error) throw error;
+      toast('Santri ditambahkan ✅');
+    }
+    await loadAllData();
+    tutupModal();
+    renderSantriPage();
+    refreshStats();
+  } catch(e){
+    alert('❌ Gagal simpan: ' + e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function hapusSantri(id){
+  if(!bisaKelolaSantri()){ alert('🚫 Akses ditolak!'); return; }
+  if(!confirm('Yakin hapus data santri ini?')) return;
+  showLoading(true);
+  try {
+    const { error } = await sb.from('santri').delete().eq('id', id);
+    if(error) throw error;
+    await loadAllData();
+    renderSantriPage();
+    refreshStats();
+    toast('Santri dihapus 🗑️');
+  } catch(e){
+    alert('❌ Gagal hapus: ' + e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+/* ============================================================
+   HALAMAN NILAI
+============================================================ */
+function renderNilaiPage(){
+  const content = document.getElementById('nilaiContent');
+  const bc = document.getElementById('breadcrumbNilai');
+  const fab = document.getElementById('fabAdd');
+  const allSantri = getSantri();
+  const allNilai = getNilai();
+
+  if(!navNilai.jenjang){
+    bc.innerHTML = '🏠 <span>Pilih Jenjang</span>';
+    fab.classList.remove('show');
+    const jenjangList = getJenjang();
+    if(!jenjangList.length){ content.innerHTML = '<div class="table-empty">Belum ada jenjang.</div>'; return; }
+
+    let html = '<div class="level-title">🎓 Pilih Jenjang</div><div class="btn-grid">';
+    jenjangList.forEach(j => {
+      const santriArr = allSantri.filter(s => s.jenjang === j);
+      const totalNilai = allNilai.filter(n => santriArr.some(s => s.nama === n.santri)).length;
+      const cls = j.toLowerCase() === 'ibtidaiyah' ? 'ibtidaiyah' :
+                  j.toLowerCase() === 'tsanawiyah' ? 'tsanawiyah' :
+                  j.toLowerCase() === 'aliyah' ? 'aliyah' : '';
+      html += `
+        <button class="level-btn ${cls}" onclick="pilihJenjangNilai('${esc(j)}')">
+          <span class="badge-count">${totalNilai}</span>
+          <span class="icon">🎓</span>
+          <div class="label">${esc(j)}</div>
+          <div class="desc">${santriArr.length} santri • ${totalNilai} nilai</div>
+        </button>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  if(!navNilai.kelas){
+    bc.innerHTML = `🏠 <span>${esc(navNilai.jenjang)}</span> › Pilih Kelas`;
+    fab.classList.remove('show');
+    const kelasArr = getKelasByJenjang(navNilai.jenjang);
+    if(!kelasArr.length){ content.innerHTML = `<div class="table-empty">Belum ada kelas.</div>`; return; }
+
+    let html = `<div class="level-title">📚 Kelas di ${esc(navNilai.jenjang)}</div><div class="btn-grid">`;
+    kelasArr.forEach(k => {
+      const santriArr = allSantri.filter(s => s.jenjang === navNilai.jenjang && s.kelas === k);
+      const totalNilai = allNilai.filter(n => santriArr.some(s => s.nama === n.santri)).length;
+      html += `
+        <button class="level-btn kelas" onclick="pilihKelasNilai('${esc(k)}')">
+          <span class="badge-count">${totalNilai}</span>
+          <span class="icon">📚</span>
+          <div class="label">Kelas ${esc(k)}</div>
+          <div class="desc">${santriArr.length} santri • ${totalNilai} nilai</div>
+        </button>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  if(!navNilai.bagian){
+    bc.innerHTML = `🏠 <span>${esc(navNilai.jenjang)}</span> › <span>Kelas ${esc(navNilai.kelas)}</span> › Pilih Bagian`;
+    fab.classList.remove('show');
+    const bagianArr = getBagian();
+    if(!bagianArr.length){ content.innerHTML = '<div class="table-empty">Belum ada bagian.</div>'; return; }
+
+    let html = `<div class="level-title">🏷️ Bagian di Kelas ${esc(navNilai.kelas)}</div><div class="btn-grid">`;
+    bagianArr.forEach(b => {
+      const santriArr = allSantri.filter(s =>
+        s.jenjang === navNilai.jenjang && s.kelas === navNilai.kelas && s.bagian === b
+      );
+      const totalNilai = allNilai.filter(n => santriArr.some(s => s.nama === n.santri)).length;
+      html += `
+        <button class="level-btn bagian" onclick="pilihBagianNilai('${esc(b)}')">
+          <span class="badge-count">${totalNilai}</span>
+          <span class="icon">🏷️</span>
+          <div class="label">Bagian ${esc(b)}</div>
+          <div class="desc">${santriArr.length} santri • ${totalNilai} nilai</div>
+        </button>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  bc.innerHTML = `🏠 <span>${esc(navNilai.jenjang)}</span> › <span>Kelas ${esc(navNilai.kelas)}</span> › <span>Bagian ${esc(navNilai.bagian)}</span>`;
+  if(bisaInputNilai()){ fab.classList.add('show'); } else { fab.classList.remove('show'); }
+
+  const santriFiltered = allSantri.filter(s =>
+    s.jenjang === navNilai.jenjang && s.kelas === navNilai.kelas && s.bagian === navNilai.bagian
+  );
+  const mapelArr = getMapelByKelas(navNilai.jenjang, navNilai.kelas);
+
+  if(!santriFiltered.length){ content.innerHTML = '<div class="table-wrapper"><div class="table-empty">Belum ada santri.</div></div>'; return; }
+  if(!mapelArr.length){ content.innerHTML = '<div class="table-wrapper"><div class="table-empty">Belum ada mapel untuk kelas ini.</div></div>'; return; }
+
+  let html = `
+    <div class="table-toolbar" style="margin-bottom:12px">
+      <input type="text" id="cariTabelNilai" placeholder="🔍 Cari nama santri..." onkeyup="filterTabelNilai()">
+    </div>
+    <div class="table-wrapper">
+      <div class="table-info">📊 ${santriFiltered.length} santri × ${mapelArr.length} mapel</div>
+      <table class="excel-nilai" id="tabelNilai">
+        <thead>
+          <tr>
+            <th class="no-col">No</th>
+            <th class="nama-col">Nama Santri</th>`;
+
+  mapelArr.forEach(m => { html += `<th>${esc(m)}</th>`; });
+  html += `<th>Rata²</th><th>Aksi</th></tr></thead><tbody>`;
+
+  santriFiltered.forEach((s, i) => {
+    const nilaiSantri = allNilai.filter(n => n.santri === s.nama);
+    let totalNilai = 0, jumlahMapel = 0;
+
+    html += `
+      <tr>
+        <td class="no-col">${i+1}</td>
+        <td class="nama-col">${esc(s.nama)}</td>`;
+
+    mapelArr.forEach(m => {
+      const found = nilaiSantri.find(n => n.mapel === m);
+      const val = found ? found.nilai : '';
+      const cls = val === '' ? '' : val >= 75 ? 'baik' : val >= 60 ? 'cukup' : 'kurang';
+      if(val !== ''){ totalNilai += val; jumlahMapel++; }
+
+      if(bisaInputNilai()){
+        html += `<td>
+          <input type="number" class="nilai-sel ${cls}" value="${val}" min="0" max="100"
+            data-santri="${esc(s.nama)}" data-mapel="${esc(m)}"
+            data-jenjang="${esc(navNilai.jenjang)}" data-kelas="${esc(navNilai.kelas)}" data-bagian="${esc(navNilai.bagian)}"
+            onchange="updateNilai(this)" onfocus="this.select()">
+        </td>`;
+      } else {
+        html += `<td><span style="font-weight:700;color:${val === '' ? '#95a5a6' : val >= 75 ? '#27ae60' : val >= 60 ? '#f39c12' : '#e74c3c'};font-size:13px;">${val === '' ? '-' : val}</span></td>`;
+      }
+    });
+
+    const rata = jumlahMapel > 0 ? (totalNilai / jumlahMapel).toFixed(1) : '-';
+    const rataCls = rata === '-' ? '' : rata >= 75 ? 'baik' : rata >= 60 ? 'cukup' : 'kurang';
+
+    const aksiNilaiHtml = bisaHapusNilai()
+      ? `<td><button class="aksi-nilai" onclick="hapusNilaiSantri('${esc(s.nama)}')">🗑️</button></td>`
+      : `<td><span style="color:#95a5a6;font-size:11px;">—</span></td>`;
+
+    html += `<td><span class="rata-rata ${rataCls}">${rata}</span></td>${aksiNilaiHtml}</tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  content.innerHTML = html;
+}
+
+function pilihJenjangNilai(j){ navNilai.jenjang = j; navNilai.kelas = null; navNilai.bagian = null; renderNilaiPage(); window.scrollTo({top:0}); }
+function pilihKelasNilai(k){ navNilai.kelas = k; navNilai.bagian = null; renderNilaiPage(); window.scrollTo({top:0}); }
+function pilihBagianNilai(b){ navNilai.bagian = b; renderNilaiPage(); window.scrollTo({top:0}); }
+
+function filterTabelNilai(){
+  const q = document.getElementById('cariTabelNilai').value.toUpperCase();
+  document.querySelectorAll('#tabelNilai tbody tr').forEach(tr => {
+    tr.style.display = tr.textContent.toUpperCase().includes(q) ? '' : 'none';
+  });
+}
+
+async function updateNilai(input){
+  if(!bisaInputNilai()){ alert('🚫 Akses ditolak!'); return; }
+  const santri = input.dataset.santri;
+  const mapel = input.dataset.mapel;
+  const jenjang = input.dataset.jenjang;
+  const kelas = input.dataset.kelas;
+  const bagian = input.dataset.bagian;
+  let val = input.value.trim();
+
+  try {
+    if(val === ''){
+      const { error } = await sb.from('nilai').delete().eq('santri', santri).eq('mapel', mapel);
+      if(error) throw error;
+      input.className = 'nilai-sel';
+    } else {
+      let num = Number(val);
+      if(isNaN(num) || num < 0 || num > 100){
+        alert('Nilai harus 0-100!');
+        input.value = '';
+        input.className = 'nilai-sel';
+        return;
+      }
+      input.className = 'nilai-sel ' + (num >= 75 ? 'baik' : num >= 60 ? 'cukup' : 'kurang');
+
+      const { data: existing } = await sb.from('nilai').select('id').eq('santri', santri).eq('mapel', mapel).maybeSingle();
+      if(existing){
+        const { error } = await sb.from('nilai').update({ nilai: num }).eq('id', existing.id);
+        if(error) throw error;
+      } else {
+        const { error } = await sb.from('nilai').insert({
+          santri, mapel, nilai: num, jenjang, kelas, bagian
+        });
+        if(error) throw error;
+      }
+    }
+    await loadAllData();
+    hitungUlangRata(santri);
+    refreshStats();
+  } catch(e){
+    alert('❌ Gagal simpan nilai: ' + e.message);
+  }
+}
+
+function hitungUlangRata(namaSantri){
+  const row = document.querySelector(`#tabelNilai input[data-santri="${CSS.escape(namaSantri)}"]`)?.closest('tr');
+  if(!row) return;
+  const inputs = row.querySelectorAll('input.nilai-sel');
+  let total = 0, count = 0;
+  inputs.forEach(inp => {
+    const v = Number(inp.value);
+    if(inp.value !== '' && !isNaN(v)){ total += v; count++; }
+  });
+  const rata = count > 0 ? (total / count).toFixed(1) : '-';
+  const rataCls = rata === '-' ? '' : rata >= 75 ? 'baik' : rata >= 60 ? 'cukup' : 'kurang';
+  const span = row.querySelector('.rata-rata');
+  if(span){ span.textContent = rata; span.className = 'rata-rata ' + rataCls; }
+}
+
+async function hapusNilaiSantri(nama){
+  if(!bisaHapusNilai()){ alert('🚫 Akses ditolak!'); return; }
+  if(!confirm('Hapus SEMUA nilai santri ' + nama + '?')) return;
+  showLoading(true);
+  try {
+    const { error } = await sb.from('nilai').delete().eq('santri', nama);
+    if(error) throw error;
+    await loadAllData();
+    renderNilaiPage();
+    refreshStats();
+    toast('Semua nilai dihapus 🗑️');
+  } catch(e){
+    alert('❌ Gagal: ' + e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+/* ============================================================
+   MODAL NILAI MASSAL
+============================================================ */
+function bukaModalNilai(){
+  if(!bisaInputNilai()){ alert('🚫 Akses ditolak!'); return; }
+  const santriFiltered = getSantri().filter(s =>
+    s.jenjang === navNilai.jenjang && s.kelas === navNilai.kelas && s.bagian === navNilai.bagian
+  );
+  if(!santriFiltered.length){ alert('Belum ada santri!'); return; }
+
+  const sel = document.getElementById('mNamaSantri');
+  sel.innerHTML = '<option value="">-- Pilih Santri --</option>' +
+    santriFiltered.map(s => `<option value="${esc(s.nama)}">${esc(s.nama)}</option>`).join('');
+  sel.onchange = renderMapelDiModal;
+  document.getElementById('mMapelList').innerHTML = '<p style="font-size:13px;color:#95a5a6;text-align:center;padding:12px">Pilih santri dulu</p>';
+  document.getElementById('modalNilai').classList.add('show');
+}
+
+function renderMapelDiModal(){
+  const nama = document.getElementById('mNamaSantri').value;
+  const box = document.getElementById('mMapelList');
+  if(!nama){ box.innerHTML = '<p style="font-size:13px;color:#95a5a6;text-align:center;padding:12px">Pilih santri dulu</p>'; return; }
+
+  const mapelArr = getMapelByKelas(navNilai.jenjang, navNilai.kelas);
+  if(!mapelArr.length){ box.innerHTML = '<p style="font-size:13px;color:#e74c3c;text-align:center;padding:12px">Belum ada mapel</p>'; return; }
+
+  const nilaiSantri = getNilai().filter(n => n.santri === nama);
+  box.innerHTML = mapelArr.map(m => {
+    const found = nilaiSantri.find(n => n.mapel === m);
+    const val = found ? found.nilai : '';
+    return `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <label style="flex:1;font-size:14px;color:#2c3e50">${esc(m)}</label>
+        <input type="number" class="mNilaiInput" data-mapel="${esc(m)}" value="${val}" min="0" max="100" placeholder="0-100"
+          style="width:90px;padding:9px;border:1px solid #dfe4ea;border-radius:8px;font-size:14px;text-align:center">
+      </div>`;
+  }).join('');
+}
+
+async function simpanNilaiMassal(){
+  if(!bisaInputNilai()){ alert('🚫 Akses ditolak!'); return; }
+  const nama = document.getElementById('mNamaSantri').value;
+  if(!nama){ alert('Pilih santri dulu!'); return; }
+
+  const inputs = document.querySelectorAll('.mNilaiInput');
+  showLoading(true);
+  try {
+    for(const inp of inputs){
+      const mapel = inp.dataset.mapel;
+      const val = inp.value.trim();
+
+      if(val === ''){
+        await sb.from('nilai').delete().eq('santri', nama).eq('mapel', mapel);
+      } else {
+        const num = Number(val);
+        if(isNaN(num) || num < 0 || num > 100){
+          alert('Nilai ' + mapel + ' harus 0-100!');
+          showLoading(false);
+          return;
+        }
+        const { data: existing } = await sb.from('nilai').select('id').eq('santri', nama).eq('mapel', mapel).maybeSingle();
+        if(existing){
+          await sb.from('nilai').update({ nilai: num }).eq('id', existing.id);
+        } else {
+          await sb.from('nilai').insert({
+            santri: nama, mapel, nilai: num,
+            jenjang: navNilai.jenjang, kelas: navNilai.kelas, bagian: navNilai.bagian
+          });
+        }
+      }
+    }
+    await loadAllData();
+    tutupModalNilai();
+    renderNilaiPage();
+    refreshStats();
+    toast('Nilai disimpan ✅');
+  } catch(e){
+    alert('❌ Gagal: ' + e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+function tutupModalNilai(){ document.getElementById('modalNilai').classList.remove('show'); }
+
+/* ============================================================
+   HALAMAN ABSENSI
+============================================================ */
+function renderAbsensiPage(){
+  const content = document.getElementById('absensiContent');
+  const bc = document.getElementById('breadcrumbAbsensi');
+  const fab = document.getElementById('fabAdd');
+  const allSantri = getSantri();
+
+  if(!navAbsensi.jenjang){
+    bc.innerHTML = '🏠 <span>Pilih Jenjang</span>';
+    fab.classList.remove('show');
+    const jenjangList = getJenjang();
+    if(!jenjangList.length){ content.innerHTML = '<div class="table-empty">Belum ada jenjang.</div>'; return; }
+
+    let html = '<div class="level-title">🎓 Pilih Jenjang</div><div class="btn-grid">';
+    jenjangList.forEach(j => {
+      const totalSantri = allSantri.filter(s => s.jenjang === j).length;
+      const cls = j.toLowerCase() === 'ibtidaiyah' ? 'ibtidaiyah' :
+                  j.toLowerCase() === 'tsanawiyah' ? 'tsanawiyah' :
+                  j.toLowerCase() === 'aliyah' ? 'aliyah' : '';
+      html += `
+        <button class="level-btn ${cls}" onclick="pilihJenjangAbsen('${esc(j)}')">
+          <span class="badge-count">${totalSantri}</span>
+          <span class="icon">🎓</span>
+          <div class="label">${esc(j)}</div>
+          <div class="desc">${totalSantri} santri</div>
+        </button>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  if(!navAbsensi.kelas){
+    bc.innerHTML = `🏠 <span>${esc(navAbsensi.jenjang)}</span> › Pilih Kelas`;
+    fab.classList.remove('show');
+    const kelasArr = getKelasByJenjang(navAbsensi.jenjang);
+    if(!kelasArr.length){ content.innerHTML = `<div class="table-empty">Belum ada kelas.</div>`; return; }
+
+    let html = `<div class="level-title">📚 Kelas di ${esc(navAbsensi.jenjang)}</div><div class="btn-grid">`;
+    kelasArr.forEach(k => {
+      const totalSantri = allSantri.filter(s => s.jenjang === navAbsensi.jenjang && s.kelas === k).length;
+      html += `
+        <button class="level-btn kelas" onclick="pilihKelasAbsen('${esc(k)}')">
+          <span class="badge-count">${totalSantri}</span>
+          <span class="icon">📚</span>
+          <div class="label">Kelas ${esc(k)}</div>
+          <div class="desc">${totalSantri} santri</div>
+        </button>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  if(!navAbsensi.bagian){
+    bc.innerHTML = `🏠 <span>${esc(navAbsensi.jenjang)}</span> › <span>Kelas ${esc(navAbsensi.kelas)}</span> › Pilih Bagian`;
+    fab.classList.remove('show');
+    const bagianArr = getBagian();
+    if(!bagianArr.length){ content.innerHTML = '<div class="table-empty">Belum ada bagian.</div>'; return; }
+
+    let html = `<div class="level-title">🏷️ Bagian di Kelas ${esc(navAbsensi.kelas)}</div><div class="btn-grid">`;
+    bagianArr.forEach(b => {
+      const totalSantri = allSantri.filter(s =>
+        s.jenjang === navAbsensi.jenjang && s.kelas === navAbsensi.kelas && s.bagian === b
+      ).length;
+      html += `
+        <button class="level-btn bagian" onclick="pilihBagianAbsen('${esc(b)}')">
+          <span class="badge-count">${totalSantri}</span>
+          <span class="icon">🏷️</span>
+          <div class="label">Bagian ${esc(b)}</div>
+          <div class="desc">${totalSantri} santri</div>
+        </button>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  bc.innerHTML = `🏠 <span>${esc(navAbsensi.jenjang)}</span> › <span>Kelas ${esc(navAbsensi.kelas)}</span> › <span>Bagian ${esc(navAbsensi.bagian)}</span>`;
+  fab.classList.remove('show');
+
+  const santriFiltered = allSantri.filter(s =>
+    s.jenjang === navAbsensi.jenjang && s.kelas === navAbsensi.kelas && s.bagian === navAbsensi.bagian
+  );
+  if(!santriFiltered.length){ content.innerHTML = '<div class="table-wrapper"><div class="table-empty">Belum ada santri.</div></div>'; return; }
+
+  const allAbsen = getAbsensi().filter(a =>
+    a.tanggal === tanggalAbsensi &&
+    a.jenjang === navAbsensi.jenjang &&
+    a.kelas === navAbsensi.kelas &&
+    a.bagian === navAbsensi.bagian
+  );
+
+  let rekap = { H:0, S:0, I:0, A:0 };
+  santriFiltered.forEach(s => {
+    const found = allAbsen.find(a => a.santri === s.nama);
+    if(found && rekap[found.status] !== undefined) rekap[found.status]++;
+  });
+
+  let html = `
+    <div class="absensi-toolbar">
+      <label>📅 Tanggal Absensi</label>
+      <input type="date" id="tglAbsensi" value="${tanggalAbsensi}" onchange="ubahTanggalAbsen(this.value)">
+    </div>
+
+    <div class="rekap-bar">
+      <div class="rekap-item rekap-h"><b>${rekap.H}</b><span>Hadir</span></div>
+      <div class="rekap-item rekap-s"><b>${rekap.S}</b><span>Sakit</span></div>
+      <div class="rekap-item rekap-i"><b>${rekap.I}</b><span>Izin</span></div>
+      <div class="rekap-item rekap-a"><b>${rekap.A}</b><span>Alpa</span></div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="tabel-absensi">
+        <thead>
+          <tr>
+            <th class="no">No</th>
+            <th>Nama Santri</th>
+            <th style="text-align:center">Status</th>
+            <th>Keterangan</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+  santriFiltered.forEach((s, i) => {
+    const found = allAbsen.find(a => a.santri === s.nama);
+    const status = found ? found.status : '';
+    const ket = found ? (found.ket || '') : '';
+
+    let statusCell, ketCell;
+    if(bisaIsiAbsensi()){
+      statusCell = `
+        <td style="text-align:center">
+          <div class="btn-status">
+            <button class="${status==='H'?'active H':''}" onclick="setStatus('${esc(s.nama)}','H')">H</button>
+            <button class="${status==='S'?'active S':''}" onclick="setStatus('${esc(s.nama)}','S')">S</button>
+            <button class="${status==='I'?'active I':''}" onclick="setStatus('${esc(s.nama)}','I')">I</button>
+            <button class="${status==='A'?'active A':''}" onclick="setStatus('${esc(s.nama)}','A')">A</button>
+          </div>
+        </td>`;
+      ketCell = `
+        <td>
+          <input type="text" class="absensi-ket" value="${esc(ket)}" placeholder="Keterangan..."
+            onchange="setKeterangan('${esc(s.nama)}', this.value)">
+        </td>`;
+    } else {
+      const label = status || '-';
+      const warna = status === 'H' ? '#27ae60' : status === 'S' ? '#f39c12' : status === 'I' ? '#3498db' : status === 'A' ? '#e74c3c' : '#95a5a6';
+      statusCell = `<td style="text-align:center"><span style="font-weight:700;color:${warna};font-size:14px;">${label}</span></td>`;
+      ketCell = `<td><span style="font-size:12.5px;color:#7f8c8d;">${esc(ket) || '-'}</span></td>`;
+    }
+
+    html += `<tr><td class="no">${i+1}</td><td><b>${esc(s.nama)}</b></td>${statusCell}${ketCell}</tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+
+  if(bisaIsiAbsensi()){
+    html += `
+      <div class="absensi-actions">
+        <button class="btn-semua-hadir" onclick="semuaHadir()">✅ Semua Hadir</button>
+        <button class="btn-reset-absen" onclick="resetAbsen()">🔄 Reset</button>
+      </div>`;
+  }
+
+  html += `<div class="hint">💡 <b>H</b>=Hadir, <b>S</b>=Sakit, <b>I</b>=Izin, <b>A</b>=Alpa.</div>`;
+  content.innerHTML = html;
+}
+
+function pilihJenjangAbsen(j){ navAbsensi.jenjang = j; navAbsensi.kelas = null; navAbsensi.bagian = null; renderAbsensiPage(); window.scrollTo({top:0}); }
+function pilihKelasAbsen(k){ navAbsensi.kelas = k; navAbsensi.bagian = null; renderAbsensiPage(); window.scrollTo({top:0}); }
+function pilihBagianAbsen(b){ navAbsensi.bagian = b; renderAbsensiPage(); window.scrollTo({top:0}); }
+
+function ubahTanggalAbsen(tgl){ tanggalAbsensi = tgl; renderAbsensiPage(); }
+
+async function setStatus(namaSantri, status){
+  if(!bisaIsiAbsensi()){ alert('🚫 Akses ditolak!'); return; }
+  try {
+    const { data: existing } = await sb.from('absensi')
+      .select('id, status')
+      .eq('tanggal', tanggalAbsensi)
+      .eq('jenjang', navAbsensi.jenjang)
+      .eq('kelas', navAbsensi.kelas)
+      .eq('bagian', navAbsensi.bagian)
+      .eq('santri', namaSantri)
+      .maybeSingle();
+
+    if(existing){
+      if(existing.status === status){
+        await sb.from('absensi').delete().eq('id', existing.id);
+      } else {
+        await sb.from('absensi').update({ status }).eq('id', existing.id);
+      }
+    } else {
+      await sb.from('absensi').insert({
+        tanggal: tanggalAbsensi,
+        jenjang: navAbsensi.jenjang, kelas: navAbsensi.kelas, bagian: navAbsensi.bagian,
+        santri: namaSantri, status, ket: ''
+      });
+    }
+    await loadAllData();
+    renderAbsensiPage();
+  } catch(e){
+    alert('❌ Gagal: ' + e.message);
+  }
+}
+
+async function setKeterangan(namaSantri, ket){
+  if(!bisaIsiAbsensi()) return;
+  try {
+    const { data: existing } = await sb.from('absensi')
+      .select('id')
+      .eq('tanggal', tanggalAbsensi)
+      .eq('jenjang', navAbsensi.jenjang)
+      .eq('kelas', navAbsensi.kelas)
+      .eq('bagian', navAbsensi.bagian)
+      .eq('santri', namaSantri)
+      .maybeSingle();
+
+    if(existing){
+      await sb.from('absensi').update({ ket }).eq('id', existing.id);
+      await loadAllData();
+      toast('Keterangan disimpan ✅');
+    } else {
+      await sb.from('absensi').insert({
+        tanggal: tanggalAbsensi,
+        jenjang: navAbsensi.jenjang, kelas: navAbsensi.kelas, bagian: navAbsensi.bagian,
+        santri: namaSantri, status: 'H', ket
+      });
+      await loadAllData();
+      renderAbsensiPage();
+    }
+  } catch(e){
+    alert('❌ Gagal: ' + e.message);
+  }
+}
+
+async function semuaHadir(){
+  if(!bisaIsiAbsensi()){ alert('🚫 Akses ditolak!'); return; }
+  if(!confirm('Tandai SEMUA santri sebagai Hadir?')) return;
+
+  const santriFiltered = getSantri().filter(s =>
+    s.jenjang === navAbsensi.jenjang && s.kelas === navAbsensi.kelas && s.bagian === navAbsensi.bagian
+  );
+
+  showLoading(true);
+  try {
+    // Hapus dulu semua absensi hari ini untuk bagian ini
+    await sb.from('absensi').delete()
+      .eq('tanggal', tanggalAbsensi)
+      .eq('jenjang', navAbsensi.jenjang)
+      .eq('kelas', navAbsensi.kelas)
+      .eq('bagian', navAbsensi.bagian);
+
+    // Insert semua sebagai H
+    const rows = santriFiltered.map(s => ({
+      tanggal: tanggalAbsensi,
+      jenjang: navAbsensi.jenjang, kelas: navAbsensi.kelas, bagian: navAbsensi.bagian,
+      santri: s.nama, status: 'H', ket: ''
+    }));
+    if(rows.length) await sb.from('absensi').insert(rows);
+
+    await loadAllData();
+    renderAbsensiPage();
+    toast('Semua ditandai Hadir ✅');
+  } catch(e){
+    alert('❌ Gagal: ' + e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function resetAbsen(){
+  if(!bisaIsiAbsensi()){ alert('🚫 Akses ditolak!'); return; }
+  if(!confirm('Reset absensi tanggal ini untuk bagian ini?')) return;
+  showLoading(true);
+  try {
+    await sb.from('absensi').delete()
+      .eq('tanggal', tanggalAbsensi)
+      .eq('jenjang', navAbsensi.jenjang)
+      .eq('kelas', navAbsensi.kelas)
+      .eq('bagian', navAbsensi.bagian);
+    await loadAllData();
+    renderAbsensiPage();
+    toast('Absensi direset 🔄');
+  } catch(e){
+    alert('❌ Gagal: ' + e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+/* ============================================================
+   HALAMAN PENGAJAR
+============================================================ */
+const KATEGORI_PENGAJAR = [
+  { id: 'mustahiq', label: 'Mustahiq', icon: '🎓', desc: 'Pengajar Utama', warna: 'ibtidaiyah' },
+  { id: 'munawib',  label: 'Munawib',  icon: '📖', desc: 'Pengajar Pendamping', warna: 'tsanawiyah' }
+];
+
+function renderPengajarPage(){
+  if(!isAdmin()){ alert('🚫 Akses ditolak!'); goHome(); return; }
+
+  const content = document.getElementById('pengajarContent');
+  const bc = document.getElementById('breadcrumbPengajar');
+  const fab = document.getElementById('fabAdd');
+  const allPengajar = getPengajar();
+
+  if(!navPengajar.kategori){
+    bc.innerHTML = '🏠 <span>Pilih Kategori Pengajar</span>';
+    fab.classList.remove('show');
+
+    let html = '<div class="level-title">👨‍🏫 Kategori Pengajar</div><div class="btn-grid">';
+    KATEGORI_PENGAJAR.forEach(k => {
+      const total = allPengajar.filter(p => p.kategori === k.id).length;
+      html += `
+        <button class="level-btn ${k.warna}" onclick="pilihKategoriPengajar('${k.id}')">
+          <span class="badge-count">${total}</span>
+          <span class="icon">${k.icon}</span>
+          <div class="label">${k.label}</div>
+          <div class="desc">${k.desc}</div>
+        </button>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  const kat = KATEGORI_PENGAJAR.find(k => k.id === navPengajar.kategori);
+  bc.innerHTML = `🏠 <span>Pengajar</span> › <span>${kat.label}</span>`;
+  fab.classList.add('show');
+
+  const pengajarFiltered = allPengajar.filter(p => p.kategori === navPengajar.kategori);
+
+  let html = `
+    <div class="table-toolbar">
+      <input type="text" id="cariTabelPengajar" placeholder="🔍 Cari..." onkeyup="filterTabelPengajar()">
+    </div>
+    <div class="table-wrapper">
+      <div class="table-info">👨‍🏫 ${pengajarFiltered.length} ${kat.label}</div>
+      <table class="excel" id="tabelPengajar">
+        <thead>
+          <tr>
+            <th class="no">No</th>
+            <th>Nama Pengajar</th>
+            <th>NIP / ID</th>
+            <th>Mapel</th>
+            <th>No. HP</th>
+            <th>Asal</th>
+            <th style="text-align:center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+  if(!pengajarFiltered.length){
+    html += `<tr><td colspan="7" class="table-empty">Belum ada ${kat.label}.</td></tr>`;
+  } else {
+    pengajarFiltered.forEach((p, i) => {
+      html += `
+        <tr>
+          <td class="no">${i+1}</td>
+          <td><b>${esc(p.nama)}</b></td>
+          <td>${esc(p.nip) || '-'}</td>
+          <td>${esc(p.mapel) || '-'}</td>
+          <td>${esc(p.telepon) || '-'}</td>
+          <td>${esc(p.asal) || '-'}</td>
+          <td class="aksi-cell">
+            <button class="btn-edit-tbl"  onclick="editPengajar(${p.id})">✏️</button>
+            <button class="btn-hapus-tbl" onclick="hapusPengajar(${p.id})">🗑️</button>
+          </td>
+        </tr>`;
+    });
+  }
+
+  html += `</tbody></table></div>`;
+  content.innerHTML = html;
+}
+
+function pilihKategoriPengajar(id){ navPengajar.kategori = id; renderPengajarPage(); window.scrollTo({top:0}); }
+
+function filterTabelPengajar(){
+  const q = document.getElementById('cariTabelPengajar').value.toUpperCase();
+  document.querySelectorAll('#tabelPengajar tbody tr').forEach(tr => {
+    if(tr.querySelector('.table-empty')) return;
+    tr.style.display = tr.textContent.toUpperCase().includes(q) ? '' : 'none';
+  });
+}
+
+let editPengajarId = null;
+
+function bukaModalPengajar(){
+  if(!bisaKelolaPengajar()){ alert('🚫 Akses ditolak!'); return; }
+  editPengajarId = null;
+  const kat = KATEGORI_PENGAJAR.find(k => k.id === navPengajar.kategori);
+  document.getElementById('modalTitlePengajar').textContent = 'Tambah ' + kat.label;
+  ['pNama','pNip','pAsal','pTelepon'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pMapel').value = '';
+  document.getElementById('pKategori').value = kat.label;
+  isiDropdownMapelPengajar();
+  document.getElementById('modalPengajar').classList.add('show');
+}
+
+function editPengajar(id){
+  if(!bisaKelolaPengajar()){ alert('🚫 Akses ditolak!'); return; }
+  const p = getPengajar().find(x => x.id === id);
+  if(!p) return;
+  editPengajarId = id;
+  const kat = KATEGORI_PENGAJAR.find(k => k.id === p.kategori);
+  document.getElementById('modalTitlePengajar').textContent = 'Edit ' + kat.label;
+  document.getElementById('pNama').value = p.nama;
+  document.getElementById('pNip').value = p.nip || '';
+  document.getElementById('pAsal').value = p.asal || '';
+  document.getElementById('pTelepon').value = p.telepon || '';
+  document.getElementById('pKategori').value = kat.label;
+  isiDropdownMapelPengajar();
+  document.getElementById('pMapel').value = p.mapel || '';
+  document.getElementById('modalPengajar').classList.add('show');
+}
+
+function isiDropdownMapelPengajar(){
+  const all = getMapelAll();
+  const set = new Set();
+  Object.values(all).forEach(arr => arr.forEach(m => set.add(m)));
+  const list = [...set].sort();
+  const sel = document.getElementById('pMapel');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- Pilih Mapel Utama (opsional) --</option>' +
+    list.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  if(list.includes(cur)) sel.value = cur;
+}
+
+function tutupModalPengajar(){ document.getElementById('modalPengajar').classList.remove('show'); }
+
+async function simpanPengajar(){
+  if(!bisaKelolaPengajar()){ alert('🚫 Akses ditolak!'); return; }
+  const nama    = document.getElementById('pNama').value.trim();
+  const nip     = document.getElementById('pNip').value.trim();
+  const asal    = document.getElementById('pAsal').value.trim();
+  const telepon = document.getElementById('pTelepon').value.trim();
+  const mapel   = document.getElementById('pMapel').value;
+
+  if(!nama){ alert('Nama pengajar tidak boleh kosong!'); return; }
+
+  showLoading(true);
+  try {
+    if(editPengajarId){
+      await sb.from('pengajar').update({ nama, nip, asal, telepon, mapel }).eq('id', editPengajarId);
+      toast('Data pengajar diperbarui ✅');
+    } else {
+      await sb.from('pengajar').insert({ nama, nip, asal, telepon, mapel, kategori: navPengajar.kategori });
+      toast('Pengajar ditambahkan ✅');
+    }
+    await loadAllData();
+    tutupModalPengajar();
+    renderPengajarPage();
+    refreshStats();
+  } catch(e){
+    alert('❌ Gagal: ' + e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function hapusPengajar(id){
+  if(!bisaKelolaPengajar()){ alert('🚫 Akses ditolak!'); return; }
+  const p = getPengajar().find(x => x.id === id);
+  if(!confirm('Hapus pengajar ' + (p ? p.nama : '') + '?')) return;
+  showLoading(true);
+  try {
+    await sb.from('pengajar').delete().eq('id', id);
+    await loadAllData();
+    renderPengajarPage();
+    refreshStats();
+    toast('Pengajar dihapus 🗑️');
+  } catch(e){
+    alert('❌ Gagal: ' + e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+/* ============================================================
+   PENGATURAN
+============================================================ */
+let editItemIdx = { jenjang:-1, kelas:-1, bagian:-1 };
+let currentTab = 'jenjang';
+
+function switchTab(tab, btn){
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function renderPengaturan(){
+  if(!isAdmin()){ alert('🚫 Akses ditolak!'); goHome(); return; }
+  renderList('jenjang');
+  renderKelasGroup();
+  renderList('bagian');
+  renderMapelPerKelas();
+  isiDropdownJenjangPengaturan();
+  renderPengaturanUser();
+  refreshStats();
+}
+
+function renderList(jenis){
+  const data = jenis === 'jenjang' ? getJenjang() : jenis === 'bagian' ? getBagian() : [];
+  const list = document.getElementById('list' + capitalize(jenis));
+  const count = document.getElementById('count' + capitalize(jenis));
+  if(!list) return;
+  count.textContent = data.length;
+  list.innerHTML = '';
+
+  if(!data.length){
+    list.innerHTML = '<li class="table-empty" style="list-style:none">Belum ada data</li>';
+    return;
+  }
+
+  data.forEach((item, i) => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <span class="item-nama">${esc(item)}</span>
+      <div class="item-aksi">
+        <button class="btn-mini-edit"  onclick="editItem('${jenis}', ${i})">Edit</button>
+        <button class="btn-mini-hapus" onclick="hapusItem('${jenis}', ${i})">Hapus</button>
+      </div>`;
+    list.appendChild(li);
+  });
+}
+
+function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function renderKelasGroup(){
+  const wrap = document.getElementById('listKelasGroup');
+  const jenjangList = getJenjang();
+  const kelasAll = getKelasAll();
+
+  let total = 0;
+  Object.values(kelasAll).forEach(arr => total += arr.length);
+  document.getElementById('countKelas').textContent = total;
+
+  if(!jenjangList.length){
+    wrap.innerHTML = '<p style="text-align:center;color:#95a5a6;padding:20px;font-size:13px">Belum ada jenjang.</p>';
+    return;
+  }
+
+  wrap.innerHTML = jenjangList.map(j => {
+    const arr = kelasAll[j] || [];
+    return `
+      <div class="kelas-group">
+        <div class="kelas-header" onclick="this.parentElement.classList.toggle('closed')">
+          <span>🎓 ${esc(j)} <span style="font-weight:400;font-size:12px;color:#7f8c8d">(${arr.length} kelas)</span></span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="kelas-body">
+          <div class="mapel-chips">
+            ${arr.length
+              ? arr.map((k,i) => `<span class="mapel-chip">Kelas ${esc(k)}<button onclick="hapusKelas('${esc(j)}', ${i})">×</button></span>`).join('')
+              : '<span class="mapel-empty">Belum ada kelas</span>'
+            }
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function isiDropdownJenjangPengaturan(){
+  const sel = document.getElementById('inputKelasJenjang');
+  if(!sel) return;
+  const cur = sel.value;
+  const data = getJenjang();
+  sel.innerHTML = '<option value="">-- Pilih Jenjang --</option>' +
+    data.map(j => `<option value="${esc(j)}">${esc(j)}</option>`).join('');
+  if(data.includes(cur)) sel.value = cur;
+}
+
+async function simpanItem(jenis){
+  if(!isAdmin()){ alert('🚫 Akses ditolak!'); return; }
+
+  if(jenis === 'jenjang'){
+    const val = document.getElementById('inputJenjang').value.trim();
+    if(!val){ alert('Isi nama jenjang!'); return; }
+    let data = getJenjang();
+    if(data.map(d => d.toLowerCase()).includes(val.toLowerCase())){ alert('Sudah ada!'); return; }
+    const idx = editItemIdx.jenjang;
+    const valLama = idx > -1 ? data[idx] : null;
+
+    if(idx > -1){
+      data[idx] = val;
+      editItemIdx.jenjang = -1;
+      document.getElementById('btnBatalJenjang').style.display = 'none';
+      if(valLama){
+        const kelasAll = getKelasAll();
+        if(kelasAll[valLama]){
+          kelasAll[val] = kelasAll[valLama];
+          delete kelasAll[valLama];
+          await simpanPengaturan('kelas', kelasAll);
+        }
+        const mAll = getMapelAll();
+        Object.keys(mAll).forEach(k => {
+          if(k.startsWith(valLama + '-')){
+            const kelas = k.substring(valLama.length + 1);
+            mAll[val + '-' + kelas] = mAll[k];
+            delete mAll[k];
+          }
+        });
+        await simpanPengaturan('mapel', mAll);
+        // update santri
+        await sb.from('santri').update({ jenjang: val }).eq('jenjang', valLama);
+      }
+    } else {
+      data.push(val);
+      const kelasAll = getKelasAll();
+      if(!kelasAll[val]){ kelasAll[val] = []; await simpanPengaturan('kelas', kelasAll); }
+    }
+    await simpanPengaturan('jenjang', data);
+    document.getElementById('inputJenjang').value = '';
+    await loadAllData();
+    renderPengaturan();
+    toast('Jenjang disimpan ✅');
+    return;
+  }
+
+  if(jenis === 'kelas'){
+    const jenjang = document.getElementById('inputKelasJenjang').value;
+    const val = document.getElementById('inputKelas').value.trim();
+    if(!jenjang){ alert('Pilih jenjang dulu!'); return; }
+    if(!val){ alert('Isi nama kelas!'); return; }
+
+    let arr = getKelasByJenjang(jenjang);
+    if(arr.map(d => d.toLowerCase()).includes(val.toLowerCase())){ alert('Kelas sudah ada!'); return; }
+
+    const idx = editItemIdx.kelas;
+    const valLama = idx > -1 ? arr[idx] : null;
+
+    if(idx > -1){
+      arr[idx] = val;
+      editItemIdx.kelas = -1;
+      document.getElementById('btnBatalKelas').style.display = 'none';
+      if(valLama){
+        const mAll = getMapelAll();
+        const kl = keyMapel(jenjang, valLama);
+        const kb = keyMapel(jenjang, val);
+        if(mAll[kl]){ mAll[kb] = mAll[kl]; delete mAll[kl]; await simpanPengaturan('mapel', mAll); }
+        await sb.from('santri').update({ kelas: val }).eq('jenjang', jenjang).eq('kelas', valLama);
+      }
+    } else {
+      arr.push(val);
+      const mAll = getMapelAll();
+      if(!mAll[keyMapel(jenjang, val)]){ mAll[keyMapel(jenjang, val)] = []; await simpanPengaturan('mapel', mAll); }
+    }
+    const kelasAll = getKelasAll();
+    kelasAll[jenjang] = arr;
+    await simpanPengaturan('kelas', kelasAll);
+    document.getElementById('inputKelas').value = '';
+    await loadAllData();
+    renderPengaturan();
+    toast('Kelas disimpan ✅');
+    return;
+  }
+
+  if(jenis === 'bagian'){
+    const val = document.getElementById('inputBagian').value.trim();
+    if(!val){ alert('Isi nama bagian!'); return; }
+    let data = getBagian();
+    if(data.map(d => d.toLowerCase()).includes(val.toLowerCase())){ alert('Sudah ada!'); return; }
+    const idx = editItemIdx.bagian;
+    if(idx > -1){
+      const valLama = data[idx];
+      data[idx] = val;
+      editItemIdx.bagian = -1;
+      document.getElementById('btnBatalBagian').style.display = 'none';
+      await sb.from('santri').update({ bagian: val }).eq('bagian', valLama);
+    } else {
+      data.push(val);
+    }
+    await simpanPengaturan('bagian', data);
+    document.getElementById('inputBagian').value = '';
+    await loadAllData();
+    renderPengaturan();
+    toast('Bagian disimpan ✅');
+  }
+}
+
+function editItem(jenis, i){
+  if(!isAdmin()){ alert('🚫 Akses ditolak!'); return; }
+  if(jenis === 'jenjang'){
+    document.getElementById('inputJenjang').value = getJenjang()[i];
+    editItemIdx.jenjang = i;
+    document.getElementById('btnBatalJenjang').style.display = 'block';
+  } else if(jenis === 'bagian'){
+    document.getElementById('inputBagian').value = getBagian()[i];
+    editItemIdx.bagian = i;
+    document.getElementById('btnBatalBagian').style.display = 'block';
+  }
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+async function hapusItem(jenis, i){
+  if(!isAdmin()){ alert('🚫 Akses ditolak!'); return; }
+  if(jenis === 'jenjang'){
+    const data = getJenjang();
+    const val = data[i];
+    if(!confirm('Hapus jenjang ' + val + '?')) return;
+    data.splice(i, 1);
+    const kelasAll = getKelasAll();
+    const kelasArr = kelasAll[val] || [];
+    kelasArr.forEach(k => {
+      const mAll = getMapelAll();
+      delete mAll[keyMapel(val, k)];
+      simpanPengaturan('mapel', mAll);
+    });
+    delete kelasAll[val];
+    await simpanPengaturan('jenjang', data);
+    await simpanPengaturan('kelas', kelasAll);
+    await loadAllData();
+    renderPengaturan();
+    toast('Dihapus 🗑️');
+  } else if(jenis === 'bagian'){
+    const data = getBagian();
+    if(!confirm('Hapus bagian ' + data[i] + '?')) return;
+    data.splice(i, 1);
+    await simpanPengaturan('bagian', data);
+    await loadAllData();
+    renderPengaturan();
+    toast('Dihapus 🗑️');
+  }
+}
+
+async function hapusKelas(jenjang, i){
+  if(!isAdmin()){ alert('🚫 Akses ditolak!'); return; }
+  if(!confirm('Hapus kelas ini?')) return;
+  const arr = getKelasByJenjang(jenjang);
+  const val = arr[i];
+  arr.splice(i, 1);
+  const kelasAll = getKelasAll();
+  kelasAll[jenjang] = arr;
+  await simpanPengaturan('kelas', kelasAll);
+  const mAll = getMapelAll();
+  delete mAll[keyMapel(jenjang, val)];
+  await simpanPengaturan('mapel', mAll);
+  await loadAllData();
+  renderPengaturan();
+  toast('Kelas dihapus 🗑️');
+}
+
+function batalItem(jenis){
+  if(jenis === 'jenjang'){
+    editItemIdx.jenjang = -1;
+    document.getElementById('inputJenjang').value = '';
+    document.getElementById('btnBatalJenjang').style.display = 'none';
+  } else if(jenis === 'kelas'){
+    editItemIdx.kelas = -1;
+    document.getElementById('inputKelas').value = '';
+    document.getElementById('btnBatalKelas').style.display = 'none';
+  } else if(jenis === 'bagian'){
+    editItemIdx.bagian = -1;
+    document.getElementById('inputBagian').value = '';
+    document.getElementById('btnBatalBagian').style.display = 'none';
+  }
+}
+
+/* ============================================================
+   MAPEL PER KELAS
+============================================================ */
+function renderMapelPerKelas(){
+  const wrap = document.getElementById('listMapelPerKelas');
+  const jenjangList = getJenjang();
+  const all = getMapelAll();
+
+  let total = 0;
+  Object.values(all).forEach(arr => total += arr.length);
+  document.getElementById('countMapelTotal').textContent = total;
+
+  wrap.innerHTML = '';
+
+  if(!jenjangList.length){
+    wrap.innerHTML = '<p style="text-align:center;color:#95a5a6;padding:20px;font-size:13px">Belum ada jenjang.</p>';
+    return;
+  }
+
+  jenjangList.forEach(j => {
+    const kelasArr = getKelasByJenjang(j);
+    if(!kelasArr.length) return;
+
+    const section = document.createElement('div');
+    section.style.marginBottom = '14px';
+    section.innerHTML = `<div style="font-size:13px;font-weight:700;color:#2c3e50;margin-bottom:8px;padding-left:4px">🎓 ${esc(j)}</div>`;
+
+    kelasArr.forEach(k => {
+      const mapelArr = getMapelByKelas(j, k);
+      const group = document.createElement('div');
+      group.className = 'kelas-group closed';
+      group.innerHTML = `
+        <div class="kelas-header" onclick="this.parentElement.classList.toggle('closed')">
+          <span>📚 Kelas ${esc(k)} <span style="font-weight:400;font-size:12px;color:#7f8c8d">(${mapelArr.length} mapel)</span></span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="kelas-body">
+          <div class="mapel-chips">
+            ${mapelArr.length
+              ? mapelArr.map((m,i) => `<span class="mapel-chip">${esc(m)}<button onclick="hapusMapel('${esc(j)}','${esc(k)}', ${i})">×</button></span>`).join('')
+              : '<span class="mapel-empty">Belum ada mapel</span>'
+            }
+          </div>
+          <div class="input-mapel-box">
+            <input type="text" id="inputMapel_${esc(j)}_${esc(k)}" placeholder="Tambah mapel...">
+            <button onclick="tambahMapel('${esc(j)}','${esc(k)}')">+ Tambah</button>
+          </div>
+        </div>`;
+      section.appendChild(group);
+    });
+
+    wrap.appendChild(section);
+  });
+}
+
+async function tambahMapel(jenjang, kelas){
+  if(!isAdmin()){ alert('🚫 Akses ditolak!'); return; }
+  const input = document.getElementById('inputMapel_' + jenjang + '_' + kelas);
+  const val = input.value.trim();
+  if(!val){ alert('Isi nama mapel!'); return; }
+
+  const arr = getMapelByKelas(jenjang, kelas);
+  if(arr.map(m => m.toLowerCase()).includes(val.toLowerCase())){ alert('Mapel sudah ada!'); return; }
+  arr.push(val);
+  const all = getMapelAll();
+  all[keyMapel(jenjang, kelas)] = arr;
+  await simpanPengaturan('mapel', all);
+  await loadAllData();
+  renderMapelPerKelas();
+  toast('Mapel ditambahkan ✅');
+}
+
+async function hapusMapel(jenjang, kelas, i){
+  if(!isAdmin()){ alert('🚫 Akses ditolak!'); return; }
+  if(!confirm('Hapus mapel ini?')) return;
+  const arr = getMapelByKelas(jenjang, kelas);
+  arr.splice(i, 1);
+  const all = getMapelAll();
+  all[keyMapel(jenjang, kelas)] = arr;
+  await simpanPengaturan('mapel', all);
+  await loadAllData();
+  renderMapelPerKelas();
+  toast('Mapel dihapus 🗑️');
+}
+
+/* ============================================================
+   PENGATURAN USER
+============================================================ */
+let editUserIdx = -1;
+
+function renderPengaturanUser(){
+  if(!isAdmin()) return;
+  const users = getUsers();
+  document.getElementById('countUser').textContent = users.length;
+  const list = document.getElementById('listUser');
+  list.innerHTML = '';
+
+  if(!users.length){
+    list.innerHTML = '<li class="table-empty" style="list-style:none">Belum ada user</li>';
+    return;
+  }
+
+  const current = getCurrentUser();
+
+  users.forEach((u, i) => {
+    const li = document.createElement('li');
+    const isMe = current && current.id === u.id;
+    const statusBadge = u.aktif === false
+      ? '<span style="background:#fdeaea;color:#e74c3c;padding:2px 8px;border-radius:8px;font-size:10.5px;font-weight:600;margin-left:6px;">NONAKTIF</span>'
+      : '<span style="background:#e8f8f0;color:#27ae60;padding:2px 8px;border-radius:8px;font-size:10.5px;font-weight:600;margin-left:6px;">AKTIF</span>';
+    const meBadge = isMe ? '<span style="background:#eaf4fd;color:#3498db;padding:2px 8px;border-radius:8px;font-size:10.5px;font-weight:600;margin-left:6px;">ANDA</span>' : '';
+    const roleIkon = u.role === 'Admin' ? '👑' : u.role === 'Mustahiq' ? '🎓' : u.role === 'Munawib' ? '📖' : '👁️';
+
+    li.innerHTML = `
+      <div class="item-nama">
+        <div style="font-weight:700;color:#2c3e50;font-size:14px;">${esc(u.username)} ${meBadge}</div>
+        <div style="font-size:11.5px;color:#7f8c8d;margin-top:3px;">${roleIkon} ${esc(u.role || '-')} ${statusBadge}</div>
+      </div>
+      <div class="item-aksi">
+        <button class="btn-mini-edit"  onclick="editUser(${i})">Edit</button>
+        <button class="btn-mini-hapus" onclick="hapusUser(${i})" ${isMe ? 'disabled style="opacity:.4;cursor:not-allowed;"' : ''}>Hapus</button>
+      </div>`;
+    list.appendChild(li);
+  });
+}
+
+async function simpanUser(){
+  if(!isAdmin()){ alert('🚫 Akses ditolak!'); return; }
+  const username = document.getElementById('uUsername').value.trim();
+  const password = document.getElementById('uPassword').value;
+  const role     = document.getElementById('uRole').value;
+  const aktif    = document.getElementById('uAktif').value === 'true';
+
+  if(!username){ alert('Username tidak boleh kosong!'); return; }
+  if(username.length < 3){ alert('Username minimal 3 karakter!'); return; }
+  if(/\s/.test(username)){ alert('Username tidak boleh ada spasi!'); return; }
+
+  const users = getUsers();
+  const dup = users.findIndex((u, i) => i !== editUserIdx && u.username.toLowerCase() === username.toLowerCase());
+  if(dup > -1){ alert('Username sudah dipakai!'); return; }
+
+  showLoading(true);
+  try {
+    if(editUserIdx > -1){
+      const u = users[editUserIdx];
+      if(password && password.length < 4){ alert('Password minimal 4 karakter!'); return; }
+      const updateData = { username, role, aktif };
+      if(password) updateData.password = password;
+      await sb.from('users').update(updateData).eq('id', u.id);
+
+      const cur = getCurrentUser();
+      if(cur && cur.id === u.id){
+        setCurrentUser({ id: u.id, username, role });
+      }
+      toast('User diperbarui ✅');
+    } else {
+      if(!password){ alert('Password wajib!'); return; }
+      if(password.length < 4){ alert('Password minimal 4 karakter!'); return; }
+      await sb.from('users').insert({ username, password, role, aktif });
+      toast('User ditambahkan ✅');
+    }
+    await loadAllData();
+    batalEditUser();
+    renderPengaturanUser();
+  } catch(e){
+    alert('❌ Gagal: ' + e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+function editUser(i){
+  if(!isAdmin()){ alert('🚫 Akses ditolak!'); return; }
+  const u = getUsers()[i];
+  editUserIdx = i;
+
+  document.getElementById('titleFormUser').textContent = '✏️ Edit User: ' + u.username;
+  document.getElementById('uUsername').value = u.username;
+  document.getElementById('uPassword').value = '';
+  document.getElementById('uPassword').placeholder = 'Kosongkan jika tidak ganti';
+  document.getElementById('uRole').value = u.role || 'Admin';
+  document.getElementById('uAktif').value = u.aktif === false ? 'false' : 'true';
+  document.getElementById('btnSimpanUser').textContent = '💾 Update User';
+  document.getElementById('btnBatalUser').style.display = 'block';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function batalEditUser(){
+  editUserIdx = -1;
+  document.getElementById('titleFormUser').textContent = '➕ Tambah User Baru';
+  document.getElementById('uUsername').value = '';
+  document.getElementById('uPassword').value = '';
+  document.getElementById('uPassword').placeholder = 'Minimal 4 karakter';
+  document.getElementById('uRole').value = 'Admin';
+  document.getElementById('uAktif').value = 'true';
+  document.getElementById('btnSimpanUser').textContent = '💾 Simpan User';
+  document.getElementById('btnBatalUser').style.display = 'none';
+}
+
+async function hapusUser(i){
+  if(!isAdmin()){ alert('🚫 Akses ditolak!'); return; }
+  const users = getUsers();
+  const u = users[i];
+  const cur = getCurrentUser();
+
+  if(cur && cur.id === u.id){ alert('❌ Tidak bisa hapus akun aktif!'); return; }
+  if(users.length <= 1){ alert('❌ Minimal 1 user!'); return; }
+  if(!confirm('Hapus user "' + u.username + '"?')) return;
+
+  showLoading(true);
+  try {
+    await sb.from('users').delete().eq('id', u.id);
+    await loadAllData();
+    renderPengaturanUser();
+    toast('User dihapus 🗑️');
+  } catch(e){
+    alert('❌ Gagal: ' + e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+/* ============================================================
+   REALTIME SUBSCRIPTION
+============================================================ */
+function setupRealtime(){
+  const tables = ['santri','nilai','absensi','pengajar','users','pengaturan'];
+
+  tables.forEach(tabel => {
+    sb.channel('realtime-' + tabel)
+      .on('postgres_changes', { event: '*', schema: 'public', table: tabel }, async (payload) => {
+        console.log('🔄 Realtime update:', tabel, payload.eventType);
+        showSync();
+
+        // Reload data
+        await loadAllData();
+
+        // Refresh halaman yang sedang aktif
+        if(document.getElementById('page-home').classList.contains('active')){
+          renderMenuDashboard();
+          refreshStats();
+        }
+        if(document.getElementById('page-santri').classList.contains('active')){ renderSantriPage(); }
+        if(document.getElementById('page-nilai').classList.contains('active')){ renderNilaiPage(); }
+        if(document.getElementById('page-absensi').classList.contains('active')){ renderAbsensiPage(); }
+        if(document.getElementById('page-pengajar').classList.contains('active')){ renderPengajarPage(); }
+        if(document.getElementById('page-pengaturan').classList.contains('active')){
+          renderList('jenjang');
+          renderKelasGroup();
+          renderList('bagian');
+          renderMapelPerKelas();
+          renderPengaturanUser();
+        }
+        refreshStats();
+      })
+      .subscribe();
+  });
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+(async function init(){
+  const sesi = localStorage.getItem(KEY_LOGIN) || sessionStorage.getItem(KEY_LOGIN);
+
+  if(sesi === 'aktif' && getCurrentUser()){
+    // Auto-login
+    document.getElementById('loginScreen').classList.add('hidden');
+    await loadAllData();
+    renderMenuDashboard();
+    refreshStats();
+    setupRealtime();
+  } else {
+    // Perlu login manual
+    // Tetap load data (biar realtime berjalan setelah login)
+    sb.channel('waiting').subscribe(); // dummy
+  }
+
+  document.getElementById('loginUser').addEventListener('keypress', function(e){
+    if(e.key === 'Enter') document.getElementById('loginPass').focus();
+  });
+  document.getElementById('loginPass').addEventListener('keypress', function(e){
+    if(e.key === 'Enter') prosesLogin();
+  });
+})();
+
+// Setelah login berhasil, setup realtime
+const _origLogin = prosesLogin;
+prosesLogin = async function(){
+  await _origLogin();
+  if(getCurrentUser()){ setupRealtime(); }
+};
+</script>
+</body>
+</html>
