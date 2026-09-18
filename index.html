@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>App Santri</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.0"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 body{background:#eef2f5;min-height:100vh;padding-bottom:90px}
@@ -180,6 +180,20 @@ table.tabel-absensi .no{text-align:center;color:#95a5a6;width:36px;font-weight:6
 
 .count-info{font-size:12px;color:#95a5a6;text-align:right;margin-bottom:8px}
 
+.kelas-group{background:#fff;border-radius:11px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden}
+.kelas-header{background:#e8f8f0;padding:11px 14px;font-weight:700;color:#27ae60;font-size:14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.kelas-header .arrow{transition:transform .2s}
+.kelas-group.closed .arrow{transform:rotate(-90deg)}
+.kelas-body{padding:10px 14px}
+.kelas-group.closed .kelas-body{display:none}
+.mapel-chips{display:flex;flex-wrap:wrap;gap:6px}
+.mapel-chip{background:#f0f2f5;padding:6px 10px;border-radius:20px;font-size:12.5px;color:#2c3e50;display:flex;align-items:center;gap:6px}
+.mapel-chip button{background:#e74c3c;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.mapel-empty{font-size:12px;color:#95a5a6;font-style:italic;padding:4px 0}
+.input-mapel-box{display:flex;gap:6px;margin-top:8px}
+.input-mapel-box input{flex:1;padding:9px;border:1px solid #dfe4ea;border-radius:8px;font-size:13px;margin:0}
+.input-mapel-box button{background:#27ae60;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;margin:0;width:auto}
+
 .hint{background:#fff8e1;border-left:4px solid #f39c12;padding:12px;border-radius:8px;font-size:13px;color:#7f6000;margin-top:16px}
 
 .page{display:none;animation:fadeIn .25s}
@@ -277,6 +291,48 @@ table.tabel-absensi .no{text-align:center;color:#95a5a6;width:36px;font-weight:6
   <div class="page" id="page-absensi">
     <div class="breadcrumb" id="breadcrumbAbsensi">🏠 <span>Pilih Jenjang</span></div>
     <div id="absensiContent"></div>
+  </div>
+
+  <div class="page" id="page-backup">
+    <div class="hint" style="margin-top:0;margin-bottom:14px;">
+      💾 <b>Backup Data:</b> Simpan/ambil data dari file <b>JSON</b>. Cocok untuk pindah HP atau backup rutin.
+    </div>
+
+    <div class="form-box">
+      <h4 style="font-size:14px;color:#27ae60;margin-bottom:10px;">📤 Export (Simpan ke File)</h4>
+      <p style="font-size:12.5px;color:#7f8c8d;margin-bottom:10px;">
+        Download data sebagai file JSON. Bisa disimpan ke Google Drive / WhatsApp.
+      </p>
+      <button onclick="exportData('santri')" style="background:#3498db;">📋 Export Data Santri</button>
+      <button onclick="exportData('nilai')" style="background:#3498db;">📊 Export Data Nilai</button>
+      <button onclick="exportData('absensi')" style="background:#3498db;">✅ Export Data Absensi</button>
+      <button onclick="exportData('pengajar')" style="background:#3498db;">👨‍🏫 Export Data Pengajar</button>
+      <button onclick="exportData('semua')" style="background:#9b59b6;">📦 Export SEMUA Data (Backup Lengkap)</button>
+    </div>
+
+    <div class="form-box">
+      <h4 style="font-size:14px;color:#f39c12;margin-bottom:10px;">📥 Import (Ambil dari File)</h4>
+      <p style="font-size:12.5px;color:#7f8c8d;margin-bottom:10px;">
+        Pilih file JSON untuk dimasukkan ke aplikasi. <b>Data lama akan ditimpa!</b>
+      </p>
+
+      <label style="font-size:12.5px;color:#7f8c8d;font-weight:600;display:block;margin-bottom:5px;">Jenis Data</label>
+      <select id="importJenis">
+        <option value="santri">📋 Data Santri</option>
+        <option value="nilai">📊 Data Nilai</option>
+        <option value="pengajar">👨‍🏫 Data Pengajar</option>
+        <option value="semua">📦 Semua Data (Backup Lengkap)</option>
+      </select>
+
+      <label style="font-size:12.5px;color:#7f8c8d;font-weight:600;display:block;margin-bottom:5px;">Pilih File JSON</label>
+      <input type="file" id="fileImport" accept=".json" style="padding:10px;background:#f8f9fa;">
+
+      <button onclick="importData()" style="background:#f39c12;">📥 Import Sekarang</button>
+    </div>
+
+    <div class="hint" style="background:#fdeaea;border-left-color:#e74c3c;color:#7f0000;">
+      ⚠️ <b>Perhatian:</b> Import akan <b>menimpa</b> data lama. Lakukan backup dulu sebelum import!
+    </div>
   </div>
 
   <div class="page" id="page-pengaturan">
@@ -431,15 +487,11 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ============================================================
-   CACHE DATA LOKAL (untuk render cepat)
+   CACHE DATA LOKAL
 ============================================================ */
 let cache = {
-  santri: [],
-  nilai: [],
-  absensi: [],
-  pengajar: [],
-  pengaturan: {},
-  users: []
+  santri: [], nilai: [], absensi: [], pengajar: [],
+  pengaturan: {}, users: []
 };
 
 /* ============================================================
@@ -474,7 +526,6 @@ function esc(s){
    LOAD DATA DARI SUPABASE
 ============================================================ */
 async function loadAllData(){
-  showLoading(true);
   try {
     const [santri, nilai, absensi, pengajar, pengaturan, users] = await Promise.all([
       sb.from('santri').select('*').order('id', {ascending:true}),
@@ -496,10 +547,7 @@ async function loadAllData(){
       cache.pengaturan[row.key] = row.value;
     });
 
-    // Default pengaturan jika kosong
-    if(!cache.pengaturan.jenjang){
-      cache.pengaturan.jenjang = ['Ibtidaiyah','Tsanawiyah','Aliyah'];
-    }
+    if(!cache.pengaturan.jenjang){ cache.pengaturan.jenjang = ['Ibtidaiyah','Tsanawiyah','Aliyah']; }
     if(!cache.pengaturan.kelas){
       cache.pengaturan.kelas = {
         'Ibtidaiyah': ['1','2','3','4','5','6'],
@@ -507,46 +555,29 @@ async function loadAllData(){
         'Aliyah': ['10','11','12']
       };
     }
-    if(!cache.pengaturan.bagian){
-      cache.pengaturan.bagian = ['A','B','C','D'];
-    }
-    if(!cache.pengaturan.mapel){
-      cache.pengaturan.mapel = {};
-    }
+    if(!cache.pengaturan.bagian){ cache.pengaturan.bagian = ['A','B','C','D']; }
+    if(!cache.pengaturan.mapel){ cache.pengaturan.mapel = {}; }
   } catch(e){
     console.error('Load error:', e);
-    alert('❌ Gagal memuat data: ' + e.message);
-  } finally {
-    showLoading(false);
   }
 }
 
 /* ============================================================
-   AKSES DATA (dari cache)
+   AKSES DATA
 ============================================================ */
 function getSantri(){ return cache.santri; }
 function getNilai(){ return cache.nilai; }
 function getPengajar(){ return cache.pengajar; }
 function getAbsensi(){ return cache.absensi; }
 function getUsers(){ return cache.users; }
-
 function getJenjang(){ return cache.pengaturan.jenjang || []; }
 function getKelasAll(){ return cache.pengaturan.kelas || {}; }
 function getBagian(){ return cache.pengaturan.bagian || []; }
 function getMapelAll(){ return cache.pengaturan.mapel || {}; }
-
-function getKelasByJenjang(jenjang){
-  return getKelasAll()[jenjang] || [];
-}
-
+function getKelasByJenjang(jenjang){ return getKelasAll()[jenjang] || []; }
 function keyMapel(jenjang, kelas){ return jenjang + '-' + kelas; }
-function getMapelByKelas(jenjang, kelas){
-  return getMapelAll()[keyMapel(jenjang, kelas)] || [];
-}
+function getMapelByKelas(jenjang, kelas){ return getMapelAll()[keyMapel(jenjang, kelas)] || []; }
 
-/* ============================================================
-   SIMPAN PENGATURAN KE SUPABASE
-============================================================ */
 async function simpanPengaturan(key, value){
   cache.pengaturan[key] = value;
   const { error } = await sb.from('pengaturan').upsert(
@@ -567,10 +598,7 @@ function getCurrentUser(){
 function setCurrentUser(u){ localStorage.setItem('user_current_sb', JSON.stringify(u)); }
 function clearCurrentUser(){ localStorage.removeItem('user_current_sb'); }
 
-function getRole(){
-  const u = getCurrentUser();
-  return u ? (u.role || 'Wali') : 'Wali';
-}
+function getRole(){ const u = getCurrentUser(); return u ? (u.role || 'Wali') : 'Wali'; }
 function isAdmin(){    return getRole() === 'Admin'; }
 function isPengajar(){ return ['Mustahiq','Munawib'].includes(getRole()); }
 function isWali(){     return getRole() === 'Wali'; }
@@ -590,47 +618,29 @@ async function prosesLogin(){
   const err = document.getElementById('loginError');
   const btn = document.getElementById('btnLogin');
 
-  if(!user || !pass){
-    err.textContent = '⚠️ Username dan password wajib diisi!';
-    return;
-  }
+  if(!user || !pass){ err.textContent = '⚠️ Username dan password wajib diisi!'; return; }
 
   btn.disabled = true;
   btn.textContent = 'Memeriksa...';
 
   try {
-    const { data, error } = await sb
-      .from('users')
-      .select('*')
-      .eq('username', user)
-      .eq('password', pass)
-      .maybeSingle();
+    const { data, error } = await sb.from('users').select('*').eq('username', user).eq('password', pass).maybeSingle();
 
-    if(error){ throw error; }
-
-    if(!data){
-      err.textContent = '❌ Username atau password salah!';
-      document.getElementById('loginPass').value = '';
-      return;
-    }
-    if(data.aktif === false){
-      err.textContent = '🚫 Akun ini dinonaktifkan!';
-      return;
-    }
+    if(error) throw error;
+    if(!data){ err.textContent = '❌ Username atau password salah!'; document.getElementById('loginPass').value = ''; return; }
+    if(data.aktif === false){ err.textContent = '🚫 Akun ini dinonaktifkan!'; return; }
 
     err.textContent = '';
     setCurrentUser({ id: data.id, username: data.username, role: data.role });
 
-    if(ingat){
-      localStorage.setItem(KEY_LOGIN, 'aktif');
-    } else {
-      sessionStorage.setItem(KEY_LOGIN, 'aktif');
-    }
+    if(ingat){ localStorage.setItem(KEY_LOGIN, 'aktif'); }
+    else { sessionStorage.setItem(KEY_LOGIN, 'aktif'); }
 
     document.getElementById('loginScreen').classList.add('hidden');
     await loadAllData();
     renderMenuDashboard();
     refreshStats();
+    setupRealtime();
     toast('Selamat datang, ' + data.username + ' 👋');
 
   } catch(e){
@@ -666,13 +676,15 @@ let tanggalAbsensi = new Date().toISOString().slice(0,10);
 function openPage(name){
   if(name === 'pengaturan' && !isAdmin()){ alert('🚫 Akses ditolak!'); return; }
   if(name === 'pengajar' && !isAdmin()){ alert('🚫 Akses ditolak!'); return; }
+  if(name === 'backup' && !isAdmin()){ alert('🚫 Akses ditolak!'); return; }
 
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
 
   const titles = {
     home: '🏠 App Santri', santri: '👥 Data Santri', nilai: '📊 Nilai Santri',
-    pengajar: '👨‍🏫 Data Pengajar', absensi: '✅ Absensi Santri', pengaturan: '⚙️ Pengaturan'
+    pengajar: '👨‍🏫 Data Pengajar', absensi: '✅ Absensi Santri',
+    backup: '💾 Backup & Restore', pengaturan: '⚙️ Pengaturan'
   };
   document.getElementById('pageTitle').textContent = titles[name] || 'App Santri';
   document.getElementById('btnBack').classList.toggle('show', name !== 'home');
@@ -682,6 +694,7 @@ function openPage(name){
   if(name === 'nilai'){ navNilai = {jenjang:null,kelas:null,bagian:null}; renderNilaiPage(); }
   if(name === 'pengajar'){ navPengajar = {kategori:null}; renderPengajarPage(); }
   if(name === 'absensi'){ navAbsensi = {jenjang:null,kelas:null,bagian:null}; renderAbsensiPage(); }
+  if(name === 'backup'){ renderBackupPage(); }
   if(name === 'pengaturan'){ renderPengaturan(); }
   if(name === 'home'){ renderMenuDashboard(); }
   window.scrollTo({top:0, behavior:'smooth'});
@@ -739,7 +752,8 @@ function renderMenuDashboard(){
 
   if(isAdmin()){
     menus.push({ page:'pengajar', icon:'👨‍🏫', label:'Pengajar', desc:'Mustahiq & Munawib' });
-    menus.push({ page:'pengaturan', icon:'⚙️', label:'Pengaturan', desc:'Jenjang, kelas, bagian, user' });
+    menus.push({ page:'backup', icon:'💾', label:'Backup Data', desc:'Import & Export' });
+    menus.push({ page:'pengaturan', icon:'⚙️', label:'Pengaturan', desc:'Jenjang, kelas, user' });
   }
 
   grid.innerHTML = menus.map(m => `
@@ -749,6 +763,195 @@ function renderMenuDashboard(){
       <div class="desc">${m.desc}</div>
     </button>
   `).join('');
+}
+
+/* ============================================================
+   BACKUP: EXPORT & IMPORT
+============================================================ */
+function renderBackupPage(){
+  const fi = document.getElementById('fileImport');
+  const ij = document.getElementById('importJenis');
+  if(fi) fi.value = '';
+  if(ij) ij.value = 'santri';
+}
+
+async function exportData(jenis){
+  showLoading(true);
+  try {
+    await loadAllData();
+    let data = {};
+    let namaFile = '';
+
+    if(jenis === 'semua'){
+      data = {
+        santri: cache.santri,
+        nilai: cache.nilai,
+        absensi: cache.absensi,
+        pengajar: cache.pengajar,
+        pengaturan: cache.pengaturan,
+        users: cache.users
+      };
+      namaFile = 'backup-lengkap-' + getTanggalFile() + '.json';
+    } else {
+      if(jenis === 'santri')  { data = { santri: cache.santri }; namaFile = 'santri-' + getTanggalFile() + '.json'; }
+      if(jenis === 'nilai')   { data = { nilai: cache.nilai };   namaFile = 'nilai-' + getTanggalFile() + '.json'; }
+      if(jenis === 'absensi') { data = { absensi: cache.absensi }; namaFile = 'absensi-' + getTanggalFile() + '.json'; }
+      if(jenis === 'pengajar'){ data = { pengajar: cache.pengajar }; namaFile = 'pengajar-' + getTanggalFile() + '.json'; }
+    }
+
+    data._meta = {
+      export_at: new Date().toISOString(),
+      version: '1.0',
+      jenis: jenis,
+      app: 'App Santri'
+    };
+
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = namaFile;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast('✅ File ' + namaFile + ' dibuat');
+  } catch(e){
+    alert('❌ Gagal export: ' + e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+function getTanggalFile(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+async function importData(){
+  if(!isAdmin()){ alert('🚫 Akses ditolak!'); return; }
+
+  const jenis = document.getElementById('importJenis').value;
+  const fileInput = document.getElementById('fileImport');
+
+  if(!fileInput.files || !fileInput.files[0]){ alert('⚠️ Pilih file JSON dulu!'); return; }
+
+  const file = fileInput.files[0];
+  if(!file.name.toLowerCase().endsWith('.json')){ alert('⚠️ File harus format .json!'); return; }
+
+  const labelJenis = {
+    santri: 'Data Santri', nilai: 'Data Nilai',
+    pengajar: 'Data Pengajar', semua: 'SEMUA DATA (Backup Lengkap)'
+  }[jenis];
+
+  if(!confirm('⚠️ Yakin import ' + labelJenis + '?\n\nData lama akan DITIMPA!')) return;
+  if(!confirm('Konfirmasi terakhir: proses import tidak bisa dibatalkan. Lanjutkan?')) return;
+
+  showLoading(true);
+  try {
+    const text = await file.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch(e){ throw new Error('File JSON rusak atau tidak valid'); }
+
+    if(!data || typeof data !== 'object'){ throw new Error('Format file tidak dikenali'); }
+
+    // IMPORT SANTRI
+    if(jenis === 'santri' || (jenis === 'semua' && data.santri)){
+      const arr = data.santri || [];
+      if(!Array.isArray(arr)){ throw new Error('Data santri harus array'); }
+      await sb.from('santri').delete().neq('id', 0);
+      if(arr.length){
+        const rows = arr.map(s => ({
+          nama: s.nama, kamar: s.kamar || '', asal: s.asal || '',
+          jenjang: s.jenjang || '', kelas: s.kelas || '', bagian: s.bagian || ''
+        }));
+        const { error } = await sb.from('santri').insert(rows);
+        if(error) throw error;
+      }
+      toast('✅ Data santri diimport (' + arr.length + ')');
+    }
+
+    // IMPORT NILAI
+    if(jenis === 'nilai' || (jenis === 'semua' && data.nilai)){
+      const arr = data.nilai || [];
+      if(!Array.isArray(arr)){ throw new Error('Data nilai harus array'); }
+      await sb.from('nilai').delete().neq('id', 0);
+      if(arr.length){
+        const rows = arr.map(n => ({
+          santri: n.santri, mapel: n.mapel, nilai: Number(n.nilai),
+          jenjang: n.jenjang || '', kelas: n.kelas || '', bagian: n.bagian || ''
+        }));
+        const { error } = await sb.from('nilai').insert(rows);
+        if(error) throw error;
+      }
+      toast('✅ Data nilai diimport (' + arr.length + ')');
+    }
+
+    // IMPORT PENGAJAR
+    if(jenis === 'pengajar' || (jenis === 'semua' && data.pengajar)){
+      const arr = data.pengajar || [];
+      if(!Array.isArray(arr)){ throw new Error('Data pengajar harus array'); }
+      await sb.from('pengajar').delete().neq('id', 0);
+      if(arr.length){
+        const rows = arr.map(p => ({
+          nama: p.nama, nip: p.nip || '', asal: p.asal || '',
+          telepon: p.telepon || '', mapel: p.mapel || '',
+          kategori: p.kategori || 'mustahiq'
+        }));
+        const { error } = await sb.from('pengajar').insert(rows);
+        if(error) throw error;
+      }
+      toast('✅ Data pengajar diimport (' + arr.length + ')');
+    }
+
+    // IMPORT SEMUA
+    if(jenis === 'semua'){
+      // Absensi
+      if(data.absensi && Array.isArray(data.absensi)){
+        await sb.from('absensi').delete().neq('id', 0);
+        if(data.absensi.length){
+          const rows = data.absensi.map(a => ({
+            tanggal: a.tanggal, jenjang: a.jenjang, kelas: a.kelas, bagian: a.bagian,
+            santri: a.santri, status: a.status, ket: a.ket || ''
+          }));
+          await sb.from('absensi').insert(rows);
+        }
+      }
+      // Pengaturan
+      if(data.pengaturan && typeof data.pengaturan === 'object'){
+        for(const key of Object.keys(data.pengaturan)){
+          await simpanPengaturan(key, data.pengaturan[key]);
+        }
+      }
+      // Users
+      if(data.users && Array.isArray(data.users)){
+        await sb.from('users').delete().neq('id', 0);
+        if(data.users.length){
+          const rows = data.users.map(u => ({
+            username: u.username, password: u.password, role: u.role, aktif: u.aktif !== false
+          }));
+          await sb.from('users').insert(rows);
+        }
+      }
+      toast('✅ SEMUA data diimport!');
+    }
+
+    await loadAllData();
+    renderBackupPage();
+    refreshStats();
+
+    setTimeout(() => {
+      alert('✅ Import selesai!\n\nData baru sudah aktif.');
+    }, 500);
+  } catch(e){
+    console.error(e);
+    alert('❌ Gagal import: ' + e.message);
+  } finally {
+    showLoading(false);
+  }
 }
 
 /* ============================================================
@@ -766,10 +969,7 @@ function renderSantriPage(){
     const jenjangList = getJenjang();
     const kelasAll = getKelasAll();
 
-    if(!jenjangList.length){
-      content.innerHTML = '<div class="table-empty">Belum ada jenjang.</div>';
-      return;
-    }
+    if(!jenjangList.length){ content.innerHTML = '<div class="table-empty">Belum ada jenjang.</div>'; return; }
 
     let html = '<div class="level-title">🎓 Pilih Jenjang</div><div class="btn-grid">';
     jenjangList.forEach(j => {
@@ -795,11 +995,7 @@ function renderSantriPage(){
     bc.innerHTML = `🏠 <span>${esc(nav.jenjang)}</span> › Pilih Kelas`;
     fab.classList.remove('show');
     const kelasArr = getKelasByJenjang(nav.jenjang);
-
-    if(!kelasArr.length){
-      content.innerHTML = `<div class="table-empty">Belum ada kelas di ${esc(nav.jenjang)}.</div>`;
-      return;
-    }
+    if(!kelasArr.length){ content.innerHTML = `<div class="table-empty">Belum ada kelas.</div>`; return; }
 
     let html = `<div class="level-title">📚 Kelas di ${esc(nav.jenjang)}</div><div class="btn-grid">`;
     kelasArr.forEach(k => {
@@ -821,11 +1017,7 @@ function renderSantriPage(){
     bc.innerHTML = `🏠 <span>${esc(nav.jenjang)}</span> › <span>Kelas ${esc(nav.kelas)}</span> › Pilih Bagian`;
     fab.classList.remove('show');
     const bagianArr = getBagian();
-
-    if(!bagianArr.length){
-      content.innerHTML = '<div class="table-empty">Belum ada bagian.</div>';
-      return;
-    }
+    if(!bagianArr.length){ content.innerHTML = '<div class="table-empty">Belum ada bagian.</div>'; return; }
 
     let html = `<div class="level-title">🏷️ Bagian di Kelas ${esc(nav.kelas)}</div><div class="btn-grid">`;
     bagianArr.forEach(b => {
@@ -955,8 +1147,7 @@ async function simpanSantriModal(){
       toast('Data santri diperbarui ✅');
     } else {
       const { error } = await sb.from('santri').insert({
-        nama, kamar, asal,
-        jenjang: nav.jenjang, kelas: nav.kelas, bagian: nav.bagian
+        nama, kamar, asal, jenjang: nav.jenjang, kelas: nav.kelas, bagian: nav.bagian
       });
       if(error) throw error;
       toast('Santri ditambahkan ✅');
@@ -1129,7 +1320,6 @@ function renderNilaiPage(){
 
     const rata = jumlahMapel > 0 ? (totalNilai / jumlahMapel).toFixed(1) : '-';
     const rataCls = rata === '-' ? '' : rata >= 75 ? 'baik' : rata >= 60 ? 'cukup' : 'kurang';
-
     const aksiNilaiHtml = bisaHapusNilai()
       ? `<td><button class="aksi-nilai" onclick="hapusNilaiSantri('${esc(s.nama)}')">🗑️</button></td>`
       : `<td><span style="color:#95a5a6;font-size:11px;">—</span></td>`;
@@ -1562,14 +1752,12 @@ async function semuaHadir(){
 
   showLoading(true);
   try {
-    // Hapus dulu semua absensi hari ini untuk bagian ini
     await sb.from('absensi').delete()
       .eq('tanggal', tanggalAbsensi)
       .eq('jenjang', navAbsensi.jenjang)
       .eq('kelas', navAbsensi.kelas)
       .eq('bagian', navAbsensi.bagian);
 
-    // Insert semua sebagai H
     const rows = santriFiltered.map(s => ({
       tanggal: tanggalAbsensi,
       jenjang: navAbsensi.jenjang, kelas: navAbsensi.kelas, bagian: navAbsensi.bagian,
@@ -1923,7 +2111,6 @@ async function simpanItem(jenis){
           }
         });
         await simpanPengaturan('mapel', mAll);
-        // update santri
         await sb.from('santri').update({ jenjang: val }).eq('jenjang', valLama);
       }
     } else {
@@ -2223,7 +2410,7 @@ async function simpanUser(){
   try {
     if(editUserIdx > -1){
       const u = users[editUserIdx];
-      if(password && password.length < 4){ alert('Password minimal 4 karakter!'); return; }
+      if(password && password.length < 4){ alert('Password minimal 4 karakter!'); showLoading(false); return; }
       const updateData = { username, role, aktif };
       if(password) updateData.password = password;
       await sb.from('users').update(updateData).eq('id', u.id);
@@ -2234,8 +2421,8 @@ async function simpanUser(){
       }
       toast('User diperbarui ✅');
     } else {
-      if(!password){ alert('Password wajib!'); return; }
-      if(password.length < 4){ alert('Password minimal 4 karakter!'); return; }
+      if(!password){ alert('Password wajib!'); showLoading(false); return; }
+      if(password.length < 4){ alert('Password minimal 4 karakter!'); showLoading(false); return; }
       await sb.from('users').insert({ username, password, role, aktif });
       toast('User ditambahkan ✅');
     }
@@ -2309,13 +2496,9 @@ function setupRealtime(){
   tables.forEach(tabel => {
     sb.channel('realtime-' + tabel)
       .on('postgres_changes', { event: '*', schema: 'public', table: tabel }, async (payload) => {
-        console.log('🔄 Realtime update:', tabel, payload.eventType);
         showSync();
-
-        // Reload data
         await loadAllData();
 
-        // Refresh halaman yang sedang aktif
         if(document.getElementById('page-home').classList.contains('active')){
           renderMenuDashboard();
           refreshStats();
@@ -2344,16 +2527,11 @@ function setupRealtime(){
   const sesi = localStorage.getItem(KEY_LOGIN) || sessionStorage.getItem(KEY_LOGIN);
 
   if(sesi === 'aktif' && getCurrentUser()){
-    // Auto-login
     document.getElementById('loginScreen').classList.add('hidden');
     await loadAllData();
     renderMenuDashboard();
     refreshStats();
     setupRealtime();
-  } else {
-    // Perlu login manual
-    // Tetap load data (biar realtime berjalan setelah login)
-    sb.channel('waiting').subscribe(); // dummy
   }
 
   document.getElementById('loginUser').addEventListener('keypress', function(e){
@@ -2363,13 +2541,6 @@ function setupRealtime(){
     if(e.key === 'Enter') prosesLogin();
   });
 })();
-
-// Setelah login berhasil, setup realtime
-const _origLogin = prosesLogin;
-prosesLogin = async function(){
-  await _origLogin();
-  if(getCurrentUser()){ setupRealtime(); }
-};
 </script>
 </body>
 </html>
